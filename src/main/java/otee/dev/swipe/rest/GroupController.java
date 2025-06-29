@@ -7,12 +7,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import otee.dev.swipe.api.AddGroupMember;
 import otee.dev.swipe.api.AddGroupRequest;
-import otee.dev.swipe.model.Group;
 import otee.dev.swipe.service.GroupService;
 import otee.dev.swipe.util.ServiceResponse;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Controller
 public class GroupController {
@@ -21,20 +19,23 @@ public class GroupController {
         this.groupService = groupService;
     }
 
-    @PostMapping("/addgroup/")
+    @PostMapping("/add-group/")
     public ResponseEntity<String> addGroup(@RequestBody AddGroupRequest addGroupRequest){
-        if(addGroupRequest.getName().isBlank()){
+        if(ServiceResponse.isNullOrBlank(addGroupRequest.getName())){
             return new ResponseEntity<String>("Group name cannot be blank", HttpStatus.BAD_REQUEST);
         }
-        if (addGroupRequest.getUsername().isBlank()){
+        if (ServiceResponse.isNullOrBlank(addGroupRequest.getUsername())){
             return new ResponseEntity<String>("User name cannot be blank", HttpStatus.BAD_REQUEST);
         }
-        Group res = groupService.addGroup(addGroupRequest.getName(), addGroupRequest.getUsername());
-        if (res == null){
-            return new ResponseEntity<String>("Could not add group. Name exists already.", HttpStatus.BAD_REQUEST);
+        Map<String, String> res = groupService.addGroup(addGroupRequest.getName(), addGroupRequest.getUsername());
+        HttpStatus status;
+        if (Boolean.parseBoolean(res.get("isError"))){
+            status = HttpStatus.BAD_REQUEST;
         }
-        String response = "Add new group! Group id: " + res.getId();
-        return new ResponseEntity<String>(response, HttpStatus.OK);
+        else{
+            status = HttpStatus.OK;
+        }
+        return new ResponseEntity<String>(res.get("message"), status);
     }
 
     @PostMapping("/add-member/")

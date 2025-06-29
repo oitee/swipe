@@ -4,12 +4,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import otee.dev.swipe.api.SignInRequest;
 import otee.dev.swipe.api.SignUpRequest;
-import otee.dev.swipe.model.User;
 import otee.dev.swipe.service.UserService;
+import otee.dev.swipe.util.ServiceResponse;
+import java.util.Map;
 
 @RestController
 public class UserController {
@@ -21,22 +21,42 @@ public class UserController {
 
     @PostMapping("/signup/")
     public ResponseEntity<String> signUp(@RequestBody SignUpRequest signUpRequest){
-        User user = userService.signUp(signUpRequest.getUsername(), signUpRequest.getEmail(), signUpRequest.getPassword());
-        if (user != null){
-            return new ResponseEntity<>("Successful signup!!", HttpStatus.ACCEPTED);
+        if(ServiceResponse.isNullOrBlank(signUpRequest.getUsername())){
+            return new ResponseEntity<>("Username empty", HttpStatus.BAD_REQUEST);
+        }
+        if(ServiceResponse.isNullOrBlank(signUpRequest.getEmail())){
+            return new ResponseEntity<>("Email empty", HttpStatus.BAD_REQUEST);
+        }
+        if(ServiceResponse.isNullOrBlank(signUpRequest.getPassword())){
+            return new ResponseEntity<>("Password empty", HttpStatus.BAD_REQUEST);
+        }
+        Map<String, String> res = userService.signUp(signUpRequest.getUsername(), signUpRequest.getEmail(), signUpRequest.getPassword());
+        HttpStatus status;
+        if(Boolean.parseBoolean(res.get("isError"))){
+            status = HttpStatus.BAD_REQUEST;
         }
         else{
-            return new ResponseEntity<>("Sorry! Most likely, username is taken :(", HttpStatus.BAD_REQUEST);
+            status = HttpStatus.CREATED;
         }
+        return new ResponseEntity<>(res.get("message"), status);
     }
 
     @PostMapping("/signin/")
     public ResponseEntity<String> signIn(@RequestBody SignInRequest signInRequest){
-        String res = userService.signIn(signInRequest.getUsername(), signInRequest.getPassword());
-        if (res != null){
-            return new ResponseEntity<>("Welcome to Swipe!", HttpStatus.OK);
+        if(ServiceResponse.isNullOrBlank(signInRequest.getPassword())){
+            return new ResponseEntity<>("Password empty", HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>("ERROR! Either incorrect password or username", HttpStatus.BAD_GATEWAY);
+        if(ServiceResponse.isNullOrBlank(signInRequest.getUsername())){
+            return new ResponseEntity<>("Username empty", HttpStatus.BAD_REQUEST);
+        }
+        Map<String, String> res = userService.signIn(signInRequest.getUsername(), signInRequest.getPassword());
+        HttpStatus status;
+        if(Boolean.parseBoolean(res.get("isError"))){
+            status = HttpStatus.BAD_REQUEST;
+        } else{
+            status = HttpStatus.OK;
+        }
+        return new ResponseEntity<>(res.get("message"), status);
     }
 
 }

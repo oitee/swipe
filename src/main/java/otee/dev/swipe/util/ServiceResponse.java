@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class ServiceResponse {
 
-    public static Map<String, String> addGroupResponse(Boolean isError, String message){
+    public static Map<String, String> defaultResponse(Boolean isError, String message){
         Map<String, String> response = new HashMap<>();
         response.put("isError", String.valueOf(isError));
         response.put("message", message);

@@ -20,33 +20,33 @@ public class GroupService {
         this.userRepository = userRepository;
     }
 
-    public Group addGroup(String name, String username){
+    public Map<String, String> addGroup(String name, String username){
         if(groupRepository.findByName(name).isPresent()){
-            return null;
+            return ServiceResponse.defaultResponse(true, "Group Name already exists");
         }
         String[] users = new String[1];
         users[0] = username;
         Group group = new Group(name, users);
-        return groupRepository.save(group);
+        return ServiceResponse.defaultResponse(false, "Added new group! Group id: " + group.getId());
     }
 
     public Map<String, String> addGroupMember(Long groupId, String username){
         Optional<Group> group = groupRepository.findById(groupId);
         Optional<User> user = userRepository.findByUsername(username);
         if(group.isEmpty()){
-            return ServiceResponse.addGroupResponse(true, "Group does not exist");
+            return ServiceResponse.defaultResponse(true, "Group does not exist");
         }
         if(user.isEmpty()){
-            return ServiceResponse.addGroupResponse(true, "User does not exist");
+            return ServiceResponse.defaultResponse(true, "User does not exist");
         }
         String[] existingUsers = group.get().getUsers();
         boolean found = Arrays.asList(existingUsers).contains(username);
         if(found){
-            return ServiceResponse.addGroupResponse(true, "User is already part of the group");
+            return ServiceResponse.defaultResponse(true, "User is already part of the group");
         }
         String[] newUsers = Arrays.copyOf(existingUsers, existingUsers.length + 1);
         newUsers[newUsers.length - 1] = username;
         groupRepository.updateUsers(newUsers, group.get().getId());
-        return ServiceResponse.addGroupResponse(false, "Added user " + user.get().getUsername() + " to group: " + group.get().getName());
+        return ServiceResponse.defaultResponse(false, "Added user " + user.get().getUsername() + " to group: " + group.get().getName());
     }
 }
