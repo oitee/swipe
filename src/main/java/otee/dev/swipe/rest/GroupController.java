@@ -5,10 +5,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import otee.dev.swipe.api.AddGroupMember;
 import otee.dev.swipe.api.AddGroupRequest;
 import otee.dev.swipe.model.Group;
 import otee.dev.swipe.service.GroupService;
+import otee.dev.swipe.util.ServiceResponse;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -32,5 +35,23 @@ public class GroupController {
         }
         String response = "Add new group! Group id: " + res.getId();
         return new ResponseEntity<String>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/add-member/")
+    public ResponseEntity<String> addGroupMember(@RequestBody AddGroupMember addGroupMember){
+        if(ServiceResponse.isNullOrBlank(addGroupMember.getGroupId())){
+            return new ResponseEntity<String>("Group ID missing", HttpStatus.BAD_GATEWAY);
+        }
+        if(ServiceResponse.isNullOrBlank(addGroupMember.getUsername())){
+            return new ResponseEntity<String>("User name missing", HttpStatus.BAD_REQUEST);
+        }
+        Map<String, String> response = groupService.addGroupMember(addGroupMember.getGroupId(), addGroupMember.getUsername());
+        HttpStatus status;
+        if(Boolean.parseBoolean(response.get("isError"))){
+            status = HttpStatus.BAD_REQUEST;
+        } else{
+            status = HttpStatus.OK;
+        }
+        return new ResponseEntity<>(response.get("message"), status);
     }
 }

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface GroupRepository extends CrudRepository<Group, Long> {
     @Query("UPDATE groups SET users = :users, updated_at = CURRENT_TIMESTAMP WHERE id = :id RETURNING *")
-    int updateUsers(@Param("users") String[] users, @Param("id") Long id);
+    Group updateUsers(@Param("users") String[] users, @Param("id") Long id);
 
     Optional<Group> findByName(String name);
 }
