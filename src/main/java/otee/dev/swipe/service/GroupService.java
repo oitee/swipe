@@ -1,13 +1,9 @@
 package otee.dev.swipe.service;
 
 import org.springframework.stereotype.Service;
-import otee.dev.swipe.model.Group;
-import otee.dev.swipe.model.GroupRepository;
-import otee.dev.swipe.model.User;
-import otee.dev.swipe.model.UserRepository;
+import otee.dev.swipe.model.*;
 import otee.dev.swipe.util.ServiceResponse;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
@@ -15,19 +11,32 @@ import java.util.Optional;
 public class GroupService {
     GroupRepository groupRepository;
     UserRepository userRepository;
-    public GroupService(GroupRepository groupRepository, UserRepository userRepository){
+    GroupMemberRepository groupMembersRepository;
+    public GroupService(GroupRepository groupRepository, UserRepository userRepository, GroupMemberRepository groupMembersRepository){
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
+        this.groupMembersRepository = groupMembersRepository;
     }
 
-    public Map<String, String> addGroup(String name, String username){
+    public Map<String, String> addGroup(String name, String username, String description){
         if(groupRepository.findByName(name).isPresent()){
             return ServiceResponse.defaultResponse(true, "Group Name already exists");
         }
-        String[] users = new String[1];
-        users[0] = username;
-        Group group = new Group(name, users);
-        return ServiceResponse.defaultResponse(false, "Added new group! Group id: " + group.getId());
+        if(ServiceResponse.isNullOrBlank(username)){
+            return ServiceResponse.defaultResponse(true, "Username is empty");
+        }
+        Optional<User> createdBy = userRepository.findByUsername(username);
+        if(createdBy.isEmpty()){
+            return ServiceResponse.defaultResponse(true, "User does not exist");
+        }
+        Group group = new Group(name, createdBy.get().getId());
+        if(!ServiceResponse.isNullOrBlank(description)){
+            group.setDescription(description);
+        }
+        Group res = groupRepository.save(group);
+        GroupMember member = new GroupMember(res.getId(), createdBy.get().getId());
+        groupMembersRepository.save(member);
+        return ServiceResponse.defaultResponse(false, "Added new group! Group id: " + res.getId());
     }
 
     public Map<String, String> addGroupMember(Long groupId, String username){
@@ -39,14 +48,11 @@ public class GroupService {
         if(user.isEmpty()){
             return ServiceResponse.defaultResponse(true, "User does not exist");
         }
-        String[] existingUsers = group.get().getUsers();
-        boolean found = Arrays.asList(existingUsers).contains(username);
-        if(found){
-            return ServiceResponse.defaultResponse(true, "User is already part of the group");
+        if(groupMembersRepository.findByUserIdAndGroupId(user.get().getId(), group.get().getId()).isPresent()){
+            return ServiceResponse.defaultResponse(true, "User is already part of the Group");
         }
-        String[] newUsers = Arrays.copyOf(existingUsers, existingUsers.length + 1);
-        newUsers[newUsers.length - 1] = username;
-        groupRepository.updateUsers(newUsers, group.get().getId());
-        return ServiceResponse.defaultResponse(false, "Added user " + user.get().getUsername() + " to group: " + group.get().getName());
+        GroupMember groupMember = new GroupMember(group.get().getId(), user.get().getId());
+        groupMembersRepository.save(groupMember);
+        return ServiceResponse.defaultResponse(false, "Group Member saved to Group: " + group.get().getName());
     }
 }

@@ -3,6 +3,8 @@ package otee.dev.swipe.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.OffsetDateTime;
+
 @Table("users")
 public class User {
     @Id
@@ -10,14 +12,17 @@ public class User {
     private String username;
     private String email;
     private String password;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 
     public User(){}
 
-    public User(Long id, String username, String email, String password){
-        this.id = id;
+    public User(String username, String email, String password){
         this.username = username;
         this.email = email;
         this.password = password;
+        this.updatedAt = OffsetDateTime.now();
+        this.createdAt = OffsetDateTime.now();
     }
 
     public Long getId() {
@@ -50,5 +55,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

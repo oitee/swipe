@@ -27,10 +27,7 @@ public class UserService {
         {
             return ServiceResponse.defaultResponse(true, "Username already exists!");
         }
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setUsername(username);
+        User user = new User(username, email, passwordEncoder.encode(password));
         userRepository.save(user);
         System.out.println("ADDED NEW USER!");
         return ServiceResponse.defaultResponse(false, "Successful signup!");

@@ -27,7 +27,7 @@ public class GroupController {
         if (ServiceResponse.isNullOrBlank(addGroupRequest.getUsername())){
             return new ResponseEntity<String>("User name cannot be blank", HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> res = groupService.addGroup(addGroupRequest.getName(), addGroupRequest.getUsername());
+        Map<String, String> res = groupService.addGroup(addGroupRequest.getName(), addGroupRequest.getUsername(), addGroupRequest.getDescription());
         HttpStatus status;
         if (Boolean.parseBoolean(res.get("isError"))){
             status = HttpStatus.BAD_REQUEST;

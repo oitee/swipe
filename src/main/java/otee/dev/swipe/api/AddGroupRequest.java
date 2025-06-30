@@ -3,6 +3,7 @@ package otee.dev.swipe.api;
 public class AddGroupRequest {
     String name;
     String username;
+    String description;
 
     public String getName() {
         return name;
@@ -18,5 +19,13 @@ public class AddGroupRequest {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

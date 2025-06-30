@@ -10,14 +10,15 @@ public class Group {
     @Id
     Long id;
     String name;
-    String[] users;
+    String description;
+    Long createdBy;
     OffsetDateTime createdAt;
     OffsetDateTime updatedAt;
 
     public Group(){}
-    public Group(String name, String[] users){
+    public Group(String name, Long createdBy){
         this.name = name;
-        this.users = users;
+        this.createdBy = createdBy;
         this.createdAt = OffsetDateTime.now();
         this.updatedAt = OffsetDateTime.now();
     }
@@ -30,8 +31,12 @@ public class Group {
         return name;
     }
 
-    public String[] getUsers() {
-        return users;
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public OffsetDateTime getCreatedAt() {
@@ -44,10 +49,6 @@ public class Group {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setUsers(String[] users) {
-        this.users = users;
     }
 
     public void setCreatedAt(OffsetDateTime createdAt) {
