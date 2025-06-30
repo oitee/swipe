@@ -24,3 +24,26 @@ CREATE TABLE group_members (
     is_active BOOLEAN DEFAULT TRUE,
     UNIQUE(group_id, user_id)
 );
+
+CREATE TABLE expenses (
+    id BIGSERIAL PRIMARY KEY,
+    group_id BIGINT NOT NULL REFERENCES groups(id),
+    paid_by BIGINT NOT NULL REFERENCES users(id),
+    amount DECIMAL(10, 2) NOT NULL,
+    description VARCHAR(500) NOT NULL,
+    is_settled BOOLEAN DEFAULT FALSE,
+    expense_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    split_type VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE expense_splits (
+    id BIGSERIAL PRIMARY KEY,
+    expense_id BIGINT NOT NULL REFERENCES expenses(id),
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    amount DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(expense_id, user_id)
+);

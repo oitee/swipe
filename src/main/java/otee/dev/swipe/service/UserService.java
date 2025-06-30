@@ -2,11 +2,8 @@ package otee.dev.swipe.service;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import otee.dev.swipe.api.SignUpRequest;
 import otee.dev.swipe.model.User;
 import otee.dev.swipe.model.UserRepository;
-import otee.dev.swipe.security.PasswordConfig;
 import otee.dev.swipe.util.ServiceResponse;
 
 import java.util.Map;
@@ -47,5 +44,4 @@ public class UserService {
         System.out.println("USER FOUND AND MATCHES PASSWORD");
         return ServiceResponse.defaultResponse(false, "Welcome to Swipe!");
     }
-
 }
