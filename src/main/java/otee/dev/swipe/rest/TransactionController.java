@@ -37,7 +37,8 @@ public class TransactionController {
         if(addExpenseRequest.getAmount() <= 0.D){
             return new ResponseEntity<String>("Expense amount cannot be negative or zero", HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> response = transactionService.addExpense(addExpenseRequest.getGroupId(), addExpenseRequest.getUsername(), addExpenseRequest.getAmount(), addExpenseRequest.getDescription());
+        Map<String, String> response = transactionService
+                .addExpense(addExpenseRequest.getGroupId(), addExpenseRequest.getUsername(), addExpenseRequest.getAmount(), addExpenseRequest.getDescription());
         HttpStatus status;
         if (Boolean.parseBoolean(response.get("isError"))){
             status = HttpStatus.BAD_REQUEST;
@@ -74,6 +75,24 @@ public class TransactionController {
             return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
         }
         Map<String, String> response = transactionService.getTransactionStatusForGroup(groupId);
+        HttpStatus status;
+        if (Boolean.parseBoolean(response.get("isError"))){
+            status = HttpStatus.BAD_REQUEST;
+        }
+        else{
+            status = HttpStatus.OK;
+        }
+        return new ResponseEntity<>(response, status);
+    }
+
+    @GetMapping("/groups/{groupId}/settlements")
+    public ResponseEntity<Map> getSettlementsForGroup(@PathVariable Long groupId){
+        if(ServiceResponse.isNullOrBlank(groupId)){
+            HashMap<String, String> responseBody = new HashMap<>();
+            responseBody.put("message", "GroupId is empty");
+            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+        }
+        Map<String, String> response =transactionService.getSettlementsForGroup(groupId);
         HttpStatus status;
         if (Boolean.parseBoolean(response.get("isError"))){
             status = HttpStatus.BAD_REQUEST;

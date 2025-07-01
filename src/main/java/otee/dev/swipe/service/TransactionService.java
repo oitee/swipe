@@ -58,9 +58,7 @@ public class TransactionService {
                 .filter(exp -> Objects.equals(exp.getPaidBy(), userId))
                 .toList();
         Double total = 0D;
-        for (Expense exp : expenses){
-            total = total + exp.getAmount();
-        }
+        for (Expense exp : expenses) total = total + exp.getAmount();
         return total;
     }
     private Double getTotalExpensesOwedByAUser(Long userId, List<Expense> groupExpenses){
@@ -76,9 +74,7 @@ public class TransactionService {
         }
         List<ExpenseSplit> expenseSplits = expenseSplitRepository.findAllByUserIdAndExpenseIds(userId, expenseIds);
         Double total = 0D;
-        for(ExpenseSplit expSplit : expenseSplits){
-            total = total + expSplit.getAmount();
-        }
+        for(ExpenseSplit expSplit : expenseSplits) total = total + expSplit.getAmount();
         return total;
     }
     public Map<String, String> getTransactionStatusForAUser(Long groupId, String username){
@@ -96,24 +92,71 @@ public class TransactionService {
         Double dues = totalExpensesIncurred - totalExpensesOwed;
         return ServiceResponse.defaultResponse(false, "Total dues: " + dues);
     }
+    private List<GroupMemberBalance> getGroupMembersBalances(Group group, Boolean addUsername){
+        List<Expense> groupExpenses = expenseRepository.findAllByGroupId(group.getId());
+        List<Long> groupUserIds = groupMemberRepository
+                .findByGroupId(group.getId())
+                .stream()
+                .map(grpMember -> grpMember.getUserId())
+                .toList();
+        List<GroupMemberBalance> membersBalances = new ArrayList<>();
+        GroupMemberBalance member;
+        for(Long groupUserId : groupUserIds){
+            Double totalExpensesIncurred = getTotalExpensesByAUser(groupUserId, groupExpenses);
+            Double totalExpensesOwed = getTotalExpensesOwedByAUser(groupUserId, groupExpenses);
+            Double dues = totalExpensesIncurred - totalExpensesOwed;
+            if(addUsername){
+                member = new GroupMemberBalance(groupUserId, dues, userRepository.findById(groupUserId).get().getUsername());
+            } else{
+                member = new GroupMemberBalance(groupUserId, dues);
+            }
+            membersBalances.add(member);
+        }
+        return membersBalances;
+    }
+    // TODO: Fix the method signature:
     public Map<String, String> getTransactionStatusForGroup(Long groupId){
         Optional<Group> group = groupRepository.findById(groupId);
         if(group.isEmpty()){
             return ServiceResponse.defaultResponse(true, "Group does not exist");
         }
-        List<Expense> groupExpenses = expenseRepository.findAllByGroupId(group.get().getId());
-        List<Long> groupUserIds = groupMemberRepository
-                .findByGroupId(groupId)
-                .stream()
-                .map(grpMember -> grpMember.getUserId())
-                .toList();
-        HashMap<String, String> usersDues = new HashMap<>();
-        for(Long groupUser : groupUserIds){
-            Double totalExpensesIncurred = getTotalExpensesByAUser(groupUser, groupExpenses);
-            Double totalExpensesOwed = getTotalExpensesOwedByAUser(groupUser, groupExpenses);
-            Double dues = totalExpensesIncurred - totalExpensesOwed;
-            usersDues.put(userRepository.findById(groupUser).get().getUsername(), dues.toString());
+        List<GroupMemberBalance> memberBalances = getGroupMembersBalances(group.get(), true);
+
+        HashMap<String, String> res = new HashMap<>();
+        for(GroupMemberBalance member : memberBalances){
+            res.put(member.getUsername(), Double.toString(member.getBalance()));
         }
-        return usersDues;
+        return res;
+    }
+
+    public Map<String, String> getSettlementsForGroup(Long groupId){
+        Optional<Group> group = groupRepository.findById(groupId);
+        if(group.isEmpty()){
+            return ServiceResponse.defaultResponse(true, "Group does not exist");
+        }
+        List<GroupMemberBalance> memberBalances = getGroupMembersBalances(group.get(), true);
+        GroupMemberPriority creditors = new GroupMemberPriority(false);
+        GroupMemberPriority debtors = new GroupMemberPriority(true);
+        for(GroupMemberBalance member : memberBalances){
+            if(member.getBalance() > 0) creditors.addMember(member.getUserId(), member.getBalance(), member.getUsername());
+            else if(member.getBalance() < 0) debtors.addMember(member.getUserId(), member.getBalance(), member.getUsername());
+        }
+        List<SettlementTransaction> settlements = new ArrayList<>();
+        while(!(creditors.isEmpty() || debtors.isEmpty())){
+            GroupMemberBalance creditor = creditors.getMember();
+            GroupMemberBalance debtor = debtors.getMember();
+            Double debtAmount = Math.min(Math.abs(creditor.getBalance()), Math.abs(debtor.getBalance()));
+            Double updatedDebtorBalance = debtor.getBalance() + debtAmount;
+            Double updatedCreditorBalance = creditor.getBalance() - debtAmount;
+            System.out.println("PAYOUT: " + debtor.getUsername() + "-> " + creditor.getUsername() + " INR " + debtAmount);
+            System.out.println("Updated Balance: Debtor " + debtor.getUsername() + ": " + updatedDebtorBalance);
+            System.out.println("Updated Balance: Creditor "+ creditor.getUsername() + ": " + updatedCreditorBalance);
+            SettlementTransaction settlement = new SettlementTransaction(debtor.getUsername(), creditor.getUsername(), debtAmount);
+            settlements.add(settlement);
+            creditors.updateMemberBalance(creditor.getUserId(), updatedCreditorBalance);
+            debtors.updateMemberBalance(debtor.getUserId(), updatedDebtorBalance);
+        }
+        // TODO: Fix method signature:
+        return ServiceResponse.defaultResponse(false, settlements.toString());
     }
 }

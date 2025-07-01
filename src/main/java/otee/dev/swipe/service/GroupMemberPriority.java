@@ -16,8 +16,8 @@ public class GroupMemberPriority {
             this.memberPriorities = new PriorityQueue<GroupMemberBalance>((a, b) -> Double.compare(b.getBalance(), a.getBalance()));
         }
     }
-    public void addMember(Long userId, Double balance){
-        GroupMemberBalance member = new GroupMemberBalance(userId, balance);
+    public void addMember(Long userId, Double balance, String username){
+        GroupMemberBalance member = new GroupMemberBalance(userId, balance, username);
         memberPriorities.offer(member);
         System.out.println("Inserted: " + member.getUserId());
     }
@@ -45,6 +45,9 @@ public class GroupMemberPriority {
 
     public Boolean updateMemberBalance(Long userId, Double revisedAmount){
         GroupMemberBalance toUpdate = null;
+        if(revisedAmount == 0D){
+            return removeMember(userId);
+        }
         for(GroupMemberBalance member : memberPriorities){
             if(Objects.equals(member.getUserId(), userId)){
                 toUpdate = member;
@@ -66,5 +69,9 @@ public class GroupMemberPriority {
         GroupMemberBalance toRemove = memberPriorities.poll();
         System.out.println("Removed Peak member: " + toRemove.getUserId());
         return memberPriorities.peek();
+    }
+
+    public Boolean isEmpty(){
+        return memberPriorities.isEmpty();
     }
 }
