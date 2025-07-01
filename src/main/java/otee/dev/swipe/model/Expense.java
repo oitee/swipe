@@ -53,4 +53,12 @@ public class Expense {
     public void setGroupId(Long groupId) {
         this.groupId = groupId;
     }
+
+    public Long getPaidBy() {
+        return paidBy;
+    }
+
+    public void setPaidBy(Long paidBy) {
+        this.paidBy = paidBy;
+    }
 }

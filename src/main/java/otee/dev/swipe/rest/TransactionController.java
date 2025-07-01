@@ -3,6 +3,8 @@ package otee.dev.swipe.rest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import otee.dev.swipe.api.AddExpenseRequest;
@@ -43,5 +45,24 @@ public class TransactionController {
             status = HttpStatus.OK;
         }
         return new ResponseEntity<>(response.get("message"), status);
+    }
+    @GetMapping("/groups/{groupId}/users/{username}/dues")
+    public ResponseEntity<String> getTransactionStatus(@PathVariable Long groupId, @PathVariable String username){
+        if(ServiceResponse.isNullOrBlank(groupId)){
+            return new ResponseEntity<String>("GroupId is empty", HttpStatus.BAD_REQUEST);
+        }
+        if(ServiceResponse.isNullOrBlank(username)){
+            return new ResponseEntity<String>("Username is empty", HttpStatus.BAD_REQUEST);
+        }
+        Map<String, String> response = transactionService.getTransactionStatusForAUser(groupId, username);
+        HttpStatus status;
+        if (Boolean.parseBoolean(response.get("isError"))){
+            status = HttpStatus.BAD_REQUEST;
+        }
+        else{
+            status = HttpStatus.OK;
+        }
+        return new ResponseEntity<>(response.get("message"), status);
+
     }
 }
