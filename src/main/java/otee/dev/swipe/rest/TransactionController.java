@@ -11,6 +11,7 @@ import otee.dev.swipe.api.AddExpenseRequest;
 import otee.dev.swipe.service.TransactionService;
 import otee.dev.swipe.util.ServiceResponse;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -64,5 +65,22 @@ public class TransactionController {
         }
         return new ResponseEntity<>(response.get("message"), status);
 
+    }
+    @GetMapping("/groups/{groupId}/dues")
+    public ResponseEntity<Map> getTransactionStatusForGroup(@PathVariable Long groupId){
+        if(ServiceResponse.isNullOrBlank(groupId)){
+            HashMap<String, String> responseBody = new HashMap<>();
+            responseBody.put("message", "GroupId is empty");
+            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+        }
+        Map<String, String> response = transactionService.getTransactionStatusForGroup(groupId);
+        HttpStatus status;
+        if (Boolean.parseBoolean(response.get("isError"))){
+            status = HttpStatus.BAD_REQUEST;
+        }
+        else{
+            status = HttpStatus.OK;
+        }
+        return new ResponseEntity<>(response, status);
     }
 }

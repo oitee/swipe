@@ -4,10 +4,7 @@ import org.springframework.stereotype.Service;
 import otee.dev.swipe.model.*;
 import otee.dev.swipe.util.ServiceResponse;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TransactionService {
@@ -98,5 +95,25 @@ public class TransactionService {
         Double totalExpensesOwed = getTotalExpensesOwedByAUser(user.get().getId(), groupExpenses);
         Double dues = totalExpensesIncurred - totalExpensesOwed;
         return ServiceResponse.defaultResponse(false, "Total dues: " + dues);
+    }
+    public Map<String, String> getTransactionStatusForGroup(Long groupId){
+        Optional<Group> group = groupRepository.findById(groupId);
+        if(group.isEmpty()){
+            return ServiceResponse.defaultResponse(true, "Group does not exist");
+        }
+        List<Expense> groupExpenses = expenseRepository.findAllByGroupId(group.get().getId());
+        List<Long> groupUserIds = groupMemberRepository
+                .findByGroupId(groupId)
+                .stream()
+                .map(grpMember -> grpMember.getUserId())
+                .toList();
+        HashMap<String, String> usersDues = new HashMap<>();
+        for(Long groupUser : groupUserIds){
+            Double totalExpensesIncurred = getTotalExpensesByAUser(groupUser, groupExpenses);
+            Double totalExpensesOwed = getTotalExpensesOwedByAUser(groupUser, groupExpenses);
+            Double dues = totalExpensesIncurred - totalExpensesOwed;
+            usersDues.put(userRepository.findById(groupUser).get().getUsername(), dues.toString());
+        }
+        return usersDues;
     }
 }
