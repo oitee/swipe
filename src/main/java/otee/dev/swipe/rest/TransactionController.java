@@ -4,11 +4,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import otee.dev.swipe.api.AddExpenseRequest;
+import otee.dev.swipe.dto.TransactionDtos;
 import otee.dev.swipe.service.TransactionService;
 import otee.dev.swipe.util.ServiceResponse;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 public class TransactionController {
@@ -17,85 +15,90 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
     @PostMapping("/add-expense/")
-    public ResponseEntity<String> addExpense(@RequestBody AddExpenseRequest addExpenseRequest){
+    public ResponseEntity<TransactionDtos.DefaultDto> addExpense(@RequestBody AddExpenseRequest addExpenseRequest){
         if(ServiceResponse.isNullOrBlank(addExpenseRequest.getGroupId())){
-            return new ResponseEntity<String>("Group Id is empty", HttpStatus.BAD_REQUEST);
+            TransactionDtos.DefaultDto badResponse = new TransactionDtos.DefaultDto(false, "Group Id is empty");
+            return new ResponseEntity<TransactionDtos.DefaultDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
         if(ServiceResponse.isNullOrBlank(addExpenseRequest.getDescription())){
-            return new ResponseEntity<String>("Expense Description is empty", HttpStatus.BAD_REQUEST);
+            TransactionDtos.DefaultDto badResponse = new TransactionDtos.DefaultDto(false, "Expense Description is empty");
+            return new ResponseEntity<TransactionDtos.DefaultDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
         if(ServiceResponse.isNullOrBlank(addExpenseRequest.getUsername())){
-            return new ResponseEntity<String>("Username is empty", HttpStatus.BAD_REQUEST);
+            TransactionDtos.DefaultDto badResponse = new TransactionDtos.DefaultDto(false, "Username is empty");
+            return new ResponseEntity<TransactionDtos.DefaultDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
         if(ServiceResponse.isNullOrBlank(addExpenseRequest.getAmount())){
-            return new ResponseEntity<String>("Expense amount is empty", HttpStatus.BAD_REQUEST);
+            TransactionDtos.DefaultDto badResponse = new TransactionDtos.DefaultDto(false, "Expense amount is empty");
+            return new ResponseEntity<TransactionDtos.DefaultDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
         if(addExpenseRequest.getAmount() <= 0.D){
-            return new ResponseEntity<String>("Expense amount cannot be negative or zero", HttpStatus.BAD_REQUEST);
+            TransactionDtos.DefaultDto badResponse = new TransactionDtos.DefaultDto(false, "Expense amount cannot be negative or zero");
+            return new ResponseEntity<TransactionDtos.DefaultDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> response = transactionService
+        TransactionDtos.DefaultDto response = transactionService
                 .addExpense(addExpenseRequest.getGroupId(), addExpenseRequest.getUsername(), addExpenseRequest.getAmount(), addExpenseRequest.getDescription());
         HttpStatus status;
-        if (Boolean.parseBoolean(response.get("isError"))){
-            status = HttpStatus.BAD_REQUEST;
-        }
-        else{
+        if (response.getSuccess()){
             status = HttpStatus.OK;
         }
-        return new ResponseEntity<>(response.get("message"), status);
+        else{
+            status = HttpStatus.BAD_REQUEST;
+        }
+        return new ResponseEntity<>(response, status);
     }
     @GetMapping("/groups/{groupId}/users/{username}/dues")
-    public ResponseEntity<String> getTransactionStatus(@PathVariable Long groupId, @PathVariable String username){
+    public ResponseEntity<TransactionDtos.UserDuesDto> getTransactionStatus(@PathVariable Long groupId, @PathVariable String username){
         if(ServiceResponse.isNullOrBlank(groupId)){
-            return new ResponseEntity<String>("GroupId is empty", HttpStatus.BAD_REQUEST);
+            TransactionDtos.UserDuesDto badResponse = new TransactionDtos.UserDuesDto(false, "GroupId is empty");
+            return new ResponseEntity<TransactionDtos.UserDuesDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
         if(ServiceResponse.isNullOrBlank(username)){
-            return new ResponseEntity<String>("Username is empty", HttpStatus.BAD_REQUEST);
+            TransactionDtos.UserDuesDto badResponse = new TransactionDtos.UserDuesDto(false, "Username is empty");
+            return new ResponseEntity<TransactionDtos.UserDuesDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> response = transactionService.getTransactionStatusForAUser(groupId, username);
+        TransactionDtos.UserDuesDto response = transactionService.getTransactionStatusForAUser(groupId, username);
         HttpStatus status;
-        if (Boolean.parseBoolean(response.get("isError"))){
-            status = HttpStatus.BAD_REQUEST;
-        }
-        else{
+        if (response.getSuccess()){
             status = HttpStatus.OK;
         }
-        return new ResponseEntity<>(response.get("message"), status);
+        else{
+            status = HttpStatus.BAD_REQUEST;
+        }
+        return new ResponseEntity<>(response, status);
 
     }
     @GetMapping("/groups/{groupId}/dues")
-    public ResponseEntity<Map> getTransactionStatusForGroup(@PathVariable Long groupId){
+    public ResponseEntity<TransactionDtos.GroupDuesDto> getTransactionStatusForGroup(@PathVariable Long groupId){
         if(ServiceResponse.isNullOrBlank(groupId)){
-            HashMap<String, String> responseBody = new HashMap<>();
-            responseBody.put("message", "GroupId is empty");
-            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+            TransactionDtos.GroupDuesDto badResponse = new TransactionDtos.GroupDuesDto(false, "GroupId is empty");
+            return new ResponseEntity<>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> response = transactionService.getTransactionStatusForGroup(groupId);
+        TransactionDtos.GroupDuesDto response = transactionService.getTransactionStatusForGroup(groupId);
         HttpStatus status;
-        if (Boolean.parseBoolean(response.get("isError"))){
-            status = HttpStatus.BAD_REQUEST;
+        if (response.getSuccess()){
+            status = HttpStatus.OK;
         }
         else{
-            status = HttpStatus.OK;
+            status = HttpStatus.BAD_REQUEST;
         }
         return new ResponseEntity<>(response, status);
     }
 
     @GetMapping("/groups/{groupId}/settlements")
-    public ResponseEntity<Map> getSettlementsForGroup(@PathVariable Long groupId){
+    public ResponseEntity<TransactionDtos.SettlementDto> getSettlementsForGroup(@PathVariable Long groupId){
         if(ServiceResponse.isNullOrBlank(groupId)){
-            HashMap<String, String> responseBody = new HashMap<>();
-            responseBody.put("message", "GroupId is empty");
-            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+            TransactionDtos.SettlementDto badResponse = new TransactionDtos.SettlementDto(false, "GroupId is empty");
+            return new ResponseEntity<TransactionDtos.SettlementDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> response =transactionService.getSettlementsForGroup(groupId);
+        TransactionDtos.SettlementDto response = transactionService.getSettlementsForGroup(groupId);
         HttpStatus status;
-        if (Boolean.parseBoolean(response.get("isError"))){
-            status = HttpStatus.BAD_REQUEST;
-        }
-        else{
+        if (response.getSuccess()){
             status = HttpStatus.OK;
         }
-        return new ResponseEntity<>(response, status);
+        else{
+            status = HttpStatus.BAD_REQUEST;
+        }
+        return new ResponseEntity<TransactionDtos.SettlementDto>(response, status);
     }
 }

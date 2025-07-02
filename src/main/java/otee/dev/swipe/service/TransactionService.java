@@ -1,6 +1,7 @@
 package otee.dev.swipe.service;
 
 import org.springframework.stereotype.Service;
+import otee.dev.swipe.dto.TransactionDtos;
 import otee.dev.swipe.model.*;
 import otee.dev.swipe.util.ServiceResponse;
 
@@ -31,23 +32,23 @@ public class TransactionService {
         Double perUserShare = amount / userIds.size();
         userIds.forEach(userId -> addExpenseSplitForOne(expenseId, userId, perUserShare));
     }
-    public Map<String, String> addExpense(Long groupId, String username, Double amount, String description){
+    public TransactionDtos.DefaultDto addExpense(Long groupId, String username, Double amount, String description){
         Optional<User> user = userRepository.findByUsername(username);
         Optional<Group> group = groupRepository.findById(groupId);
         if(user.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "User does not exist");
+            return new TransactionDtos.DefaultDto(false, "User does not exist");
         }
         if(group.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "Group does not exist");
+            return new TransactionDtos.DefaultDto(false, "Group does not exist");
         }
         Optional<GroupMember> groupMember = groupMemberRepository.findByUserIdAndGroupId(user.get().getId(), group.get().getId());
         if(groupMember.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "User is not part of the group");
+            return new TransactionDtos.DefaultDto(false, "User is not part of the group");
         }
         Expense expense = new Expense(groupId, user.get().getId(), amount, description);
         Expense expenseRes = expenseRepository.save(expense);
         addExpenseSplitsForAll(expenseRes.getId(), expenseRes.getGroupId(), expenseRes.getAmount());
-        return ServiceResponse.defaultResponse(false, "Expense saved successfully");
+        return new TransactionDtos.DefaultDto(true, "Expense saved successfully", group.get().getId());
     }
     private Double getTotalExpensesByAUser(Long userId, List<Expense> groupExpenses){
         if(groupExpenses.isEmpty()){
@@ -77,20 +78,20 @@ public class TransactionService {
         for(ExpenseSplit expSplit : expenseSplits) total = total + expSplit.getAmount();
         return total;
     }
-    public Map<String, String> getTransactionStatusForAUser(Long groupId, String username){
+    public TransactionDtos.UserDuesDto getTransactionStatusForAUser(Long groupId, String username){
         Optional<User> user = userRepository.findByUsername(username);
         Optional<Group> group = groupRepository.findById(groupId);
         if(user.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "User does not exist");
+            return new TransactionDtos.UserDuesDto(false, "User does not exist");
         }
         if(group.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "Group does not exist");
+            return new TransactionDtos.UserDuesDto(false, "Group does not exist");
         }
         List<Expense> groupExpenses = expenseRepository.findAllByGroupId(group.get().getId());
         Double totalExpensesIncurred = getTotalExpensesByAUser(user.get().getId(), groupExpenses);
         Double totalExpensesOwed = getTotalExpensesOwedByAUser(user.get().getId(), groupExpenses);
         Double dues = totalExpensesIncurred - totalExpensesOwed;
-        return ServiceResponse.defaultResponse(false, "Total dues: " + dues);
+        return new TransactionDtos.UserDuesDto(user.get().getUsername(), totalExpensesIncurred, dues);
     }
     private List<GroupMemberBalance> getGroupMembersBalances(Group group, Boolean addUsername){
         List<Expense> groupExpenses = expenseRepository.findAllByGroupId(group.getId());
@@ -114,25 +115,24 @@ public class TransactionService {
         }
         return membersBalances;
     }
-    // TODO: Fix the method signature:
-    public Map<String, String> getTransactionStatusForGroup(Long groupId){
+    public TransactionDtos.GroupDuesDto getTransactionStatusForGroup(Long groupId){
         Optional<Group> group = groupRepository.findById(groupId);
         if(group.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "Group does not exist");
+            return new TransactionDtos.GroupDuesDto(false, "Group does not exist");
         }
         List<GroupMemberBalance> memberBalances = getGroupMembersBalances(group.get(), true);
 
-        HashMap<String, String> res = new HashMap<>();
+        TransactionDtos.GroupDuesDto res = new TransactionDtos.GroupDuesDto();
         for(GroupMemberBalance member : memberBalances){
-            res.put(member.getUsername(), Double.toString(member.getBalance()));
+            res.addDue(member.getUsername(), member.getBalance());
         }
         return res;
     }
 
-    public Map<String, String> getSettlementsForGroup(Long groupId){
+    public TransactionDtos.SettlementDto getSettlementsForGroup(Long groupId){
         Optional<Group> group = groupRepository.findById(groupId);
         if(group.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "Group does not exist");
+            return new TransactionDtos.SettlementDto(false, "Group does not exist");
         }
         List<GroupMemberBalance> memberBalances = getGroupMembersBalances(group.get(), true);
         GroupMemberPriority creditors = new GroupMemberPriority(false);
@@ -148,15 +148,11 @@ public class TransactionService {
             Double debtAmount = Math.min(Math.abs(creditor.getBalance()), Math.abs(debtor.getBalance()));
             Double updatedDebtorBalance = debtor.getBalance() + debtAmount;
             Double updatedCreditorBalance = creditor.getBalance() - debtAmount;
-            System.out.println("PAYOUT: " + debtor.getUsername() + "-> " + creditor.getUsername() + " INR " + debtAmount);
-            System.out.println("Updated Balance: Debtor " + debtor.getUsername() + ": " + updatedDebtorBalance);
-            System.out.println("Updated Balance: Creditor "+ creditor.getUsername() + ": " + updatedCreditorBalance);
             SettlementTransaction settlement = new SettlementTransaction(debtor.getUsername(), creditor.getUsername(), debtAmount);
             settlements.add(settlement);
             creditors.updateMemberBalance(creditor.getUserId(), updatedCreditorBalance);
             debtors.updateMemberBalance(debtor.getUserId(), updatedDebtorBalance);
         }
-        // TODO: Fix method signature:
-        return ServiceResponse.defaultResponse(false, settlements.toString());
+        return new TransactionDtos.SettlementDto(settlements, group.get().getId());
     }
 }
