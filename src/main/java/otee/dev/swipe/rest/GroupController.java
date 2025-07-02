@@ -2,9 +2,9 @@ package otee.dev.swipe.rest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import otee.dev.swipe.api.AddGroupMember;
 import otee.dev.swipe.api.AddGroupRequest;
 import otee.dev.swipe.service.GroupService;
@@ -12,7 +12,7 @@ import otee.dev.swipe.util.ServiceResponse;
 
 import java.util.Map;
 
-@Controller
+@RestController
 public class GroupController {
     GroupService groupService;
     public GroupController(GroupService groupService){
