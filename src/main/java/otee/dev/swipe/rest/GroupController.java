@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import otee.dev.swipe.api.AddGroupMember;
 import otee.dev.swipe.api.AddGroupRequest;
 import otee.dev.swipe.dto.GroupDtos;
+import otee.dev.swipe.dto.UserDto;
 import otee.dev.swipe.service.GroupService;
 import otee.dev.swipe.util.ServiceResponse;
 
@@ -62,7 +63,21 @@ public class GroupController {
             GroupDtos.GroupMembersDto badResponse = new GroupDtos.GroupMembersDto(false, "Username missing");
             return new ResponseEntity<>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        GroupDtos.GroupMembersDto response = groupService.getGroupMembers(username);
+        GroupDtos.GroupMembersDto response = groupService.getGroupsForUser(username);
+        HttpStatus status;
+        if(response.getSuccess()){
+            status = HttpStatus.OK;
+        } else{
+            status = HttpStatus.BAD_REQUEST;
+        }
+        return new ResponseEntity<>(response, status);
+    }
+    @GetMapping("/groups/{groupId}/users")
+    public ResponseEntity<UserDto.UsersForGroupDto> getUsersForGroup(@PathVariable Long groupId){
+        if(ServiceResponse.isNullOrBlank(groupId)){
+            UserDto.UsersForGroupDto badResponse = new UserDto.UsersForGroupDto(false, "Group id is missing");
+        }
+        UserDto.UsersForGroupDto response = groupService.getUsersForGroup(groupId);
         HttpStatus status;
         if(response.getSuccess()){
             status = HttpStatus.OK;

@@ -21,4 +21,15 @@ public interface GroupMemberRepository extends CrudRepository<GroupMember, Long>
             WHERE group_members.user_id = :userId
             """)
     List<GroupMemberWithGroup> findByUserIdWithGroupName(Long userId);
+    @Query("""
+            SELECT
+            group_members.group_id,
+            group_members.user_id,
+            users.username
+            FROM group_members
+            INNER JOIN users
+            ON group_members.user_id = users.id
+            WHERE group_members.group_id = :groupId
+            """)
+    List<GroupMemberWithUsername> findByGroupIdWithUsername(Long groupId);
 }

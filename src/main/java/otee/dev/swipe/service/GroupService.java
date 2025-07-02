@@ -2,6 +2,7 @@ package otee.dev.swipe.service;
 
 import org.springframework.stereotype.Service;
 import otee.dev.swipe.dto.GroupDtos;
+import otee.dev.swipe.dto.UserDto;
 import otee.dev.swipe.model.*;
 import otee.dev.swipe.util.ServiceResponse;
 
@@ -57,7 +58,7 @@ public class GroupService {
         return new GroupDtos.AddGroupMemberDto(group.get().getId(), group.get().getName(), user.get().getUsername());
     }
 
-    public GroupDtos.GroupMembersDto getGroupMembers(String username){
+    public GroupDtos.GroupMembersDto getGroupsForUser(String username){
         Optional<User> user = userRepository.findByUsername(username);
         if(user.isEmpty()){
             return new GroupDtos.GroupMembersDto(false, "User does not exist");
@@ -68,6 +69,19 @@ public class GroupService {
                 .map(member -> new GroupDtos.DefaultGroupDto(member.getGroupName(), member.getGroupId(), member.getGroupDescription()))
                 .toList();
         return new GroupDtos.GroupMembersDto(groups);
+    }
+
+    public UserDto.UsersForGroupDto getUsersForGroup(Long groupId){
+        Optional<Group> group = groupRepository.findById(groupId);
+        if(group.isEmpty()){
+            return new UserDto.UsersForGroupDto(false, "User does not exist");
+        }
+        List<UserDto> users = groupMembersRepository
+                .findByGroupIdWithUsername(groupId)
+                .stream()
+                .map(member -> new UserDto(member.getUsername()))
+                .toList();
+        return new UserDto.UsersForGroupDto(users);
     }
 
 }
