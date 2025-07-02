@@ -14,7 +14,7 @@ public class TransactionController {
     public TransactionController(TransactionService transactionService){
         this.transactionService = transactionService;
     }
-    @PostMapping("/add-expense/")
+    @PostMapping("/add-expense")
     public ResponseEntity<TransactionDtos.DefaultDto> addExpense(@RequestBody AddExpenseRequest addExpenseRequest){
         if(ServiceResponse.isNullOrBlank(addExpenseRequest.getGroupId())){
             TransactionDtos.DefaultDto badResponse = new TransactionDtos.DefaultDto(false, "Group Id is empty");

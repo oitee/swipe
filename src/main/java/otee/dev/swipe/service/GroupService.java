@@ -5,7 +5,7 @@ import otee.dev.swipe.dto.GroupDtos;
 import otee.dev.swipe.model.*;
 import otee.dev.swipe.util.ServiceResponse;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -19,16 +19,16 @@ public class GroupService {
         this.groupMembersRepository = groupMembersRepository;
     }
 
-    public GroupDtos.AddGroupDto addGroup(String name, String username, String description){
+    public GroupDtos.DefaultGroupDto addGroup(String name, String username, String description){
         if(groupRepository.findByName(name).isPresent()){
-            return new GroupDtos.AddGroupDto(false, "Group Name already exists");
+            return new GroupDtos.DefaultGroupDto(false, "Group Name already exists");
         }
         if(ServiceResponse.isNullOrBlank(username)){
-            return new GroupDtos.AddGroupDto(false, "Username is empty");
+            return new GroupDtos.DefaultGroupDto(false, "Username is empty");
         }
         Optional<User> createdBy = userRepository.findByUsername(username);
         if(createdBy.isEmpty()){
-            return new GroupDtos.AddGroupDto(false, "User does not exist");
+            return new GroupDtos.DefaultGroupDto(false, "User does not exist");
         }
         Group group = new Group(name, createdBy.get().getId());
         if(!ServiceResponse.isNullOrBlank(description)){
@@ -37,7 +37,7 @@ public class GroupService {
         Group res = groupRepository.save(group);
         GroupMember member = new GroupMember(res.getId(), createdBy.get().getId());
         groupMembersRepository.save(member);
-        return new GroupDtos.AddGroupDto(res.getId(), createdBy.get().getUsername());
+        return new GroupDtos.DefaultGroupDto(res.getId(), createdBy.get().getUsername());
     }
 
     public GroupDtos.AddGroupMemberDto addGroupMember(Long groupId, String username){
@@ -56,4 +56,18 @@ public class GroupService {
         groupMembersRepository.save(groupMember);
         return new GroupDtos.AddGroupMemberDto(group.get().getId(), group.get().getName(), user.get().getUsername());
     }
+
+    public GroupDtos.GroupMembersDto getGroupMembers(String username){
+        Optional<User> user = userRepository.findByUsername(username);
+        if(user.isEmpty()){
+            return new GroupDtos.GroupMembersDto(false, "User does not exist");
+        }
+        List<GroupDtos.DefaultGroupDto> groups = groupMembersRepository
+                .findByUserIdWithGroupName(user.get().getId())
+                .stream()
+                .map(member -> new GroupDtos.DefaultGroupDto(member.getGroupName(), member.getGroupId(), member.getGroupDescription()))
+                .toList();
+        return new GroupDtos.GroupMembersDto(groups);
+    }
+
 }

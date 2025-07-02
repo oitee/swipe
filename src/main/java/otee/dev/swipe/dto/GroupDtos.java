@@ -2,22 +2,31 @@ package otee.dev.swipe.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.List;
+
 public class GroupDtos {
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class AddGroupDto{
+    public static class DefaultGroupDto {
         private Long groupId;
+        private String groupName;
+        private String description;
         private String addedBy;
         private String message;
         private Boolean success;
 
-        public AddGroupDto(Boolean success, String message){
+        public DefaultGroupDto(Boolean success, String message){
             this.message = message;
             this.success= success;
         }
-        public AddGroupDto(Long groupId, String addedBy){
+        public DefaultGroupDto(Long groupId, String addedBy){
             this.success = true;
             this.groupId = groupId;
             this.addedBy = addedBy;
+        }
+        public DefaultGroupDto(String groupName, Long groupId, String description){
+            this.groupId = groupId;
+            this.groupName = groupName;
+            this.description = description;
         }
 
         public Long getGroupId() {
@@ -34,6 +43,14 @@ public class GroupDtos {
 
         public Boolean getSuccess() {
             return success;
+        }
+
+        public String getGroupName() {
+            return groupName;
+        }
+
+        public String getDescription() {
+            return description;
         }
     }
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -65,6 +82,32 @@ public class GroupDtos {
 
         public String getUsername() {
             return username;
+        }
+
+        public Boolean getSuccess() {
+            return success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class GroupMembersDto{
+        private List<DefaultGroupDto> groups;
+        private Boolean success;
+        private String message;
+        public GroupMembersDto(Boolean success, String message){
+            this.success = success;
+            this.message = message;
+        }
+        public GroupMembersDto(List<DefaultGroupDto> groups){
+            this.success = true;
+            this.groups = groups;
+        }
+
+        public List<DefaultGroupDto> getGroups() {
+            return groups;
         }
 
         public Boolean getSuccess() {
