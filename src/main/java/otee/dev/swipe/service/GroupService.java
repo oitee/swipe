@@ -1,6 +1,7 @@
 package otee.dev.swipe.service;
 
 import org.springframework.stereotype.Service;
+import otee.dev.swipe.dto.GroupDtos;
 import otee.dev.swipe.model.*;
 import otee.dev.swipe.util.ServiceResponse;
 
@@ -18,16 +19,16 @@ public class GroupService {
         this.groupMembersRepository = groupMembersRepository;
     }
 
-    public Map<String, String> addGroup(String name, String username, String description){
+    public GroupDtos.AddGroupDto addGroup(String name, String username, String description){
         if(groupRepository.findByName(name).isPresent()){
-            return ServiceResponse.defaultResponse(true, "Group Name already exists");
+            return new GroupDtos.AddGroupDto(false, "Group Name already exists");
         }
         if(ServiceResponse.isNullOrBlank(username)){
-            return ServiceResponse.defaultResponse(true, "Username is empty");
+            return new GroupDtos.AddGroupDto(false, "Username is empty");
         }
         Optional<User> createdBy = userRepository.findByUsername(username);
         if(createdBy.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "User does not exist");
+            return new GroupDtos.AddGroupDto(false, "User does not exist");
         }
         Group group = new Group(name, createdBy.get().getId());
         if(!ServiceResponse.isNullOrBlank(description)){
@@ -36,23 +37,23 @@ public class GroupService {
         Group res = groupRepository.save(group);
         GroupMember member = new GroupMember(res.getId(), createdBy.get().getId());
         groupMembersRepository.save(member);
-        return ServiceResponse.defaultResponse(false, "Added new group! Group id: " + res.getId());
+        return new GroupDtos.AddGroupDto(res.getId(), createdBy.get().getUsername());
     }
 
-    public Map<String, String> addGroupMember(Long groupId, String username){
+    public GroupDtos.AddGroupMemberDto addGroupMember(Long groupId, String username){
         Optional<Group> group = groupRepository.findById(groupId);
         Optional<User> user = userRepository.findByUsername(username);
         if(group.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "Group does not exist");
+            return new GroupDtos.AddGroupMemberDto(false, "Group does not exist");
         }
         if(user.isEmpty()){
-            return ServiceResponse.defaultResponse(true, "User does not exist");
+            return new GroupDtos.AddGroupMemberDto(false, "User does not exist");
         }
         if(groupMembersRepository.findByUserIdAndGroupId(user.get().getId(), group.get().getId()).isPresent()){
-            return ServiceResponse.defaultResponse(true, "User is already part of the Group");
+            return new GroupDtos.AddGroupMemberDto(false, "User is already part of the Group");
         }
         GroupMember groupMember = new GroupMember(group.get().getId(), user.get().getId());
         groupMembersRepository.save(groupMember);
-        return ServiceResponse.defaultResponse(false, "Group Member saved to Group: " + group.get().getName());
+        return new GroupDtos.AddGroupMemberDto(group.get().getId(), group.get().getName(), user.get().getUsername());
     }
 }

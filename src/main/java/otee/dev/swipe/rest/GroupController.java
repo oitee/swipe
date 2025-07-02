@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import otee.dev.swipe.api.AddGroupMember;
 import otee.dev.swipe.api.AddGroupRequest;
+import otee.dev.swipe.dto.GroupDtos;
 import otee.dev.swipe.service.GroupService;
 import otee.dev.swipe.util.ServiceResponse;
 
@@ -20,39 +21,43 @@ public class GroupController {
     }
 
     @PostMapping("/add-group/")
-    public ResponseEntity<String> addGroup(@RequestBody AddGroupRequest addGroupRequest){
+    public ResponseEntity<GroupDtos.AddGroupDto> addGroup(@RequestBody AddGroupRequest addGroupRequest){
         if(ServiceResponse.isNullOrBlank(addGroupRequest.getName())){
-            return new ResponseEntity<String>("Group name cannot be blank", HttpStatus.BAD_REQUEST);
+            GroupDtos.AddGroupDto badResponse = new GroupDtos.AddGroupDto(false, "Group name cannot be blank");
+            return new ResponseEntity<GroupDtos.AddGroupDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
         if (ServiceResponse.isNullOrBlank(addGroupRequest.getUsername())){
-            return new ResponseEntity<String>("User name cannot be blank", HttpStatus.BAD_REQUEST);
+            GroupDtos.AddGroupDto badResponse = new GroupDtos.AddGroupDto(false, "Username cannot be blank");
+            return new ResponseEntity<GroupDtos.AddGroupDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> res = groupService.addGroup(addGroupRequest.getName(), addGroupRequest.getUsername(), addGroupRequest.getDescription());
+        GroupDtos.AddGroupDto res = groupService.addGroup(addGroupRequest.getName(), addGroupRequest.getUsername(), addGroupRequest.getDescription());
         HttpStatus status;
-        if (Boolean.parseBoolean(res.get("isError"))){
-            status = HttpStatus.BAD_REQUEST;
-        }
-        else{
+        if (res.getSuccess()){
             status = HttpStatus.OK;
         }
-        return new ResponseEntity<String>(res.get("message"), status);
+        else{
+            status = HttpStatus.BAD_REQUEST;
+        }
+        return new ResponseEntity<GroupDtos.AddGroupDto>(res, status);
     }
 
     @PostMapping("/add-member/")
-    public ResponseEntity<String> addGroupMember(@RequestBody AddGroupMember addGroupMember){
+    public ResponseEntity<GroupDtos.AddGroupMemberDto> addGroupMember(@RequestBody AddGroupMember addGroupMember){
         if(ServiceResponse.isNullOrBlank(addGroupMember.getGroupId())){
-            return new ResponseEntity<String>("Group ID missing", HttpStatus.BAD_GATEWAY);
+            GroupDtos.AddGroupMemberDto badResponse = new GroupDtos.AddGroupMemberDto(false, "Group ID missing");
+            return new ResponseEntity<GroupDtos.AddGroupMemberDto>(badResponse, HttpStatus.BAD_GATEWAY);
         }
         if(ServiceResponse.isNullOrBlank(addGroupMember.getUsername())){
-            return new ResponseEntity<String>("User name missing", HttpStatus.BAD_REQUEST);
+            GroupDtos.AddGroupMemberDto badResponse = new GroupDtos.AddGroupMemberDto(false, "Username missing");
+            return new ResponseEntity<GroupDtos.AddGroupMemberDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        Map<String, String> response = groupService.addGroupMember(addGroupMember.getGroupId(), addGroupMember.getUsername());
+        GroupDtos.AddGroupMemberDto response = groupService.addGroupMember(addGroupMember.getGroupId(), addGroupMember.getUsername());
         HttpStatus status;
-        if(Boolean.parseBoolean(response.get("isError"))){
-            status = HttpStatus.BAD_REQUEST;
-        } else{
+        if(response.getSuccess()){
             status = HttpStatus.OK;
+        } else{
+            status = HttpStatus.BAD_REQUEST;
         }
-        return new ResponseEntity<>(response.get("message"), status);
+        return new ResponseEntity<>(response, status);
     }
 }
