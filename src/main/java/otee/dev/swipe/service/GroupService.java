@@ -2,6 +2,7 @@ package otee.dev.swipe.service;
 
 import org.springframework.stereotype.Service;
 import otee.dev.swipe.dto.GroupDtos;
+import otee.dev.swipe.dto.TransactionDtos;
 import otee.dev.swipe.dto.UserDto;
 import otee.dev.swipe.model.*;
 import otee.dev.swipe.util.ServiceResponse;
@@ -14,10 +15,15 @@ public class GroupService {
     GroupRepository groupRepository;
     UserRepository userRepository;
     GroupMemberRepository groupMembersRepository;
-    public GroupService(GroupRepository groupRepository, UserRepository userRepository, GroupMemberRepository groupMembersRepository){
+    ExpenseRepository expenseRepository;
+    public GroupService(GroupRepository groupRepository,
+                        UserRepository userRepository,
+                        GroupMemberRepository groupMembersRepository,
+                        ExpenseRepository expenseRepository) {
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
         this.groupMembersRepository = groupMembersRepository;
+        this.expenseRepository = expenseRepository;
     }
 
     public GroupDtos.DefaultGroupDto addGroup(String name, String username, String description){
@@ -65,7 +71,6 @@ public class GroupService {
         }
         List<GroupDtos.DefaultGroupDto> groups = groupMembersRepository
                 .findByUserIdWithGroupName(user.get().getId())
-                .stream()
                 .map(member -> new GroupDtos.DefaultGroupDto(member.getGroupName(), member.getGroupId(), member.getGroupDescription()))
                 .toList();
         return new GroupDtos.GroupMembersDto(groups);
@@ -74,14 +79,24 @@ public class GroupService {
     public UserDto.UsersForGroupDto getUsersForGroup(Long groupId){
         Optional<Group> group = groupRepository.findById(groupId);
         if(group.isEmpty()){
-            return new UserDto.UsersForGroupDto(false, "User does not exist");
+            return new UserDto.UsersForGroupDto(false, "Group does not exist");
         }
         List<UserDto> users = groupMembersRepository
                 .findByGroupIdWithUsername(groupId)
-                .stream()
                 .map(member -> new UserDto(member.getUsername()))
                 .toList();
         return new UserDto.UsersForGroupDto(users);
     }
 
+    public TransactionDtos.GroupExpensesWithUsernameDto getExpensesForGroup(Long groupId){
+        Optional<Group> group = groupRepository.findById(groupId);
+        if(group.isEmpty()){
+            return new TransactionDtos.GroupExpensesWithUsernameDto(false, "Group does not exist");
+        }
+        List<TransactionDtos.ExpenseWithUsernameDto> expenses = expenseRepository
+                .findAllByGroupIdWithUsername(groupId)
+                .map(expense -> new TransactionDtos.ExpenseWithUsernameDto(expense.getDescription(), expense.getAmount(), expense.getUsername(), expense.getExpenseTs()))
+                .toList();
+        return new TransactionDtos.GroupExpensesWithUsernameDto(expenses);
+    }
 }

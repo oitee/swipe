@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import otee.dev.swipe.api.AddGroupMember;
 import otee.dev.swipe.api.AddGroupRequest;
 import otee.dev.swipe.dto.GroupDtos;
+import otee.dev.swipe.dto.TransactionDtos;
 import otee.dev.swipe.dto.UserDto;
 import otee.dev.swipe.service.GroupService;
 import otee.dev.swipe.util.ServiceResponse;
@@ -76,8 +77,25 @@ public class GroupController {
     public ResponseEntity<UserDto.UsersForGroupDto> getUsersForGroup(@PathVariable Long groupId){
         if(ServiceResponse.isNullOrBlank(groupId)){
             UserDto.UsersForGroupDto badResponse = new UserDto.UsersForGroupDto(false, "Group id is missing");
+            return new ResponseEntity<>(badResponse, HttpStatus.BAD_REQUEST);
         }
         UserDto.UsersForGroupDto response = groupService.getUsersForGroup(groupId);
+        HttpStatus status;
+        if(response.getSuccess()){
+            status = HttpStatus.OK;
+        } else{
+            status = HttpStatus.BAD_REQUEST;
+        }
+        return new ResponseEntity<>(response, status);
+    }
+
+    @GetMapping("/groups/{groupId}/expenses")
+    public ResponseEntity<TransactionDtos.GroupExpensesWithUsernameDto> getExpensesForGroup(@PathVariable Long groupId){
+        if(ServiceResponse.isNullOrBlank(groupId)){
+            TransactionDtos.GroupExpensesWithUsernameDto badResponse = new TransactionDtos.GroupExpensesWithUsernameDto(false, "Group id is missing");
+            return new ResponseEntity<>(badResponse, HttpStatus.BAD_REQUEST);
+        }
+        TransactionDtos.GroupExpensesWithUsernameDto response = groupService.getExpensesForGroup(groupId);
         HttpStatus status;
         if(response.getSuccess()){
             status = HttpStatus.OK;

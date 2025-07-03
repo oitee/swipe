@@ -3,6 +3,7 @@ package otee.dev.swipe.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import otee.dev.swipe.service.SettlementTransaction;
 
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 public class TransactionDtos {
@@ -137,6 +138,61 @@ public class TransactionDtos {
 
         public Long getGroupId() {
             return groupId;
+        }
+    }
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class ExpenseWithUsernameDto {
+        private String description;
+        private Double amount;
+        private String paidBy;
+        OffsetDateTime ts;
+        public ExpenseWithUsernameDto(String description, Double amount, String paidBy, OffsetDateTime ts){
+            this.description = description;
+            this.amount = amount;
+            this.paidBy = paidBy;
+            this.ts = ts;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public Double getAmount() {
+            return amount;
+        }
+
+        public String getPaidBy() {
+            return paidBy;
+        }
+
+        public OffsetDateTime getTs() {
+            return ts;
+        }
+    }
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class GroupExpensesWithUsernameDto {
+        private List<ExpenseWithUsernameDto> expenses;
+        private Boolean success;
+        private String message;
+        public GroupExpensesWithUsernameDto(Boolean success, String message){
+            this.success = success;
+            this.message = message;
+        }
+        public GroupExpensesWithUsernameDto(List<ExpenseWithUsernameDto> expenses){
+            this.success = true;
+            this.expenses = expenses;
+        }
+
+        public List<ExpenseWithUsernameDto> getExpenses() {
+            return expenses;
+        }
+
+        public Boolean getSuccess() {
+            return success;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 
