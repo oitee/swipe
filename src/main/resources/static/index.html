@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split-wise App</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            padding: 20px; /* Add some padding for smaller screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        /* Basic styling for the main app container */
+        #app-container {
+            background-color: #ffffff; /* White background for the app */
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 2.5rem; /* Ample padding inside the container */
+            width: 100%;
+            max-width: 600px; /* Increased max width for more content */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* Space between sections */
+        }
+        /* Style for the message box */
+        #message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+        }
+        #message-box.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        #message-box.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        #message-box.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        /* Styling for lists of items (groups, expenses, users) */
+        .list-item {
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #e5e7eb;
+        }
+        .list-item:hover {
+            background-color: #eff6ff;
+            border-color: #bfdbfe;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        .list-item.selected {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- Message box for displaying success/error/info messages -->
+        <div id="message-box"></div>
+
+        <!-- This div will hold our dynamic content (login, signup, home, group details) -->
+        <div id="app"></div>
+    </div>
+
+    <script>
+        // Get references to the main app div and the message box
+        const appDiv = document.getElementById('app');
+        const messageBox = document.getElementById('message-box');
+
+        // Global state variables
+        let currentPage = 'login'; // Start with the login page
+        let loggedInUsername = null; // Stores the username of the logged-in user
+        let currentGroupId = null; // Stores the ID of the currently viewed group
+
+        // --- Helper function to display messages ---
+        /**
+         * Displays a temporary message in the message box.
+         * @param {string} message - The message to display.
+         * @param {'success'|'error'|'info'} type - The type of message (for styling).
+         */
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `p-3 rounded-lg mb-4 text-center font-medium ${type}`; // Apply Tailwind classes and type class
+            messageBox.style.display = 'block'; // Make it visible
+
+            // Hide the message after 3 seconds
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+                messageBox.textContent = '';
+                messageBox.className = ''; // Clear classes
+            }, 3000);
+        }
+
+        // --- Function to render the current page ---
+        async function renderApp() {
+            // Clear any existing content in the app div
+            appDiv.innerHTML = '';
+
+            // Render content based on the current page
+            if (currentPage === 'login') {
+                appDiv.innerHTML = `
+                    <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Login</h2>
+                    <form id="login-form" class="flex flex-col gap-4">
+                        <div>
+                            <label for="login-username" class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
+                            <input type="text" id="login-username" name="username" placeholder="your_username"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                        </div>
+                        <div>
+                            <label for="login-password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                            <input type="password" id="login-password" name="password" placeholder="********"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out shadow-md">
+                            Login
+                        </button>
+                    </form>
+                    <p class="text-center text-gray-600 mt-4">
+                        Don't have an account?
+                        <a href="#" id="go-to-signup" class="text-blue-600 hover:underline">Sign up here</a>
+                    </p>
+                `;
+                // Add event listener for login form submission
+                document.getElementById('login-form').addEventListener('submit', handleLogin);
+                // Add event listener to switch to signup page
+                document.getElementById('go-to-signup').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPage = 'signup';
+                    renderApp();
+                });
+
+            } else if (currentPage === 'signup') {
+                appDiv.innerHTML = `
+                    <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Sign Up</h2>
+                    <form id="signup-form" class="flex flex-col gap-4">
+                        <div>
+                            <label for="signup-username" class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
+                            <input type="text" id="signup-username" name="username" placeholder="choose_username"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                        </div>
+                        <div>
+                            <label for="signup-email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                            <input type="email" id="signup-email" name="email" placeholder="your@example.com"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                        </div>
+                        <div>
+                            <label for="signup-password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                            <input type="password" id="signup-password" name="password" placeholder="********"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                        </div>
+                        <div>
+                            <label for="signup-confirm-password" class="block text-gray-700 text-sm font-semibold mb-2">Confirm Password</label>
+                            <input type="password" id="signup-confirm-password" name="confirmPassword" placeholder="********"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md">
+                            Sign Up
+                        </button>
+                    </form>
+                    <p class="text-center text-gray-600 mt-4">
+                        Already have an account?
+                        <a href="#" id="go-to-login" class="text-blue-600 hover:underline">Login here</a>
+                    </p>
+                `;
+                // Add event listener for signup form submission
+                document.getElementById('signup-form').addEventListener('submit', handleSignup);
+                // Add event listener to switch to login page
+                document.getElementById('go-to-login').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPage = 'login';
+                    renderApp();
+                });
+
+            } else if (currentPage === 'home') {
+                if (!loggedInUsername) {
+                    // If somehow on home page without loggedInUsername, redirect to login
+                    currentPage = 'login';
+                    renderApp();
+                    return;
+                }
+                appDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Welcome, ${loggedInUsername}!</h2>
+                        <button id="logout-button"
+                            class="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300 ease-in-out shadow-md text-sm">
+                            Logout
+                        </button>
+                    </div>
+
+                    <!-- Create New Group Section -->
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4">Create New Group</h3>
+                        <form id="create-group-form" class="flex flex-col gap-3">
+                            <div>
+                                <label for="group-name" class="block text-gray-700 text-sm font-semibold mb-1">Group Name</label>
+                                <input type="text" id="group-name" name="name" placeholder="Vacation Fund"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="group-description" class="block text-gray-700 text-sm font-semibold mb-1">Description (Optional)</label>
+                                <textarea id="group-description" name="description" placeholder="Trip to Goa"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition duration-300 ease-in-out shadow-md">
+                                Create Group
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- My Groups Section -->
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">My Groups</h3>
+                    <div id="my-groups-list" class="flex flex-col gap-3">
+                        <!-- Groups will be loaded here -->
+                        <p class="text-gray-500 text-center" id="no-groups-message">Loading groups...</p>
+                    </div>
+                `;
+                document.getElementById('logout-button').addEventListener('click', handleLogout);
+                document.getElementById('create-group-form').addEventListener('submit', handleCreateGroup);
+                await fetchAndDisplayGroups(); // Load groups when home page is rendered
+
+            } else if (currentPage === 'group-details') {
+                if (!currentGroupId) {
+                    showMessage('No group selected.', 'error');
+                    currentPage = 'home';
+                    renderApp();
+                    return;
+                }
+
+                // Fetch group details, members, expenses, dues, settlements
+                const groupDetails = await fetchGroupDetails(currentGroupId);
+                if (!groupDetails) {
+                    showMessage('Failed to load group details.', 'error');
+                    currentPage = 'home';
+                    renderApp();
+                    return;
+                }
+
+                appDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">${groupDetails.groupName}</h2>
+                        <button id="back-to-home-button"
+                            class="bg-gray-400 text-white py-2 px-4 rounded-lg hover:bg-gray-500 transition duration-300 ease-in-out shadow-md text-sm">
+                            Back to Home
+                        </button>
+                    </div>
+                    <p class="text-gray-600 mb-6">${groupDetails.description || 'No description provided.'}</p>
+
+                    <!-- Add Member Section -->
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4">Add Member</h3>
+                        <form id="add-member-form" class="flex flex-col gap-3">
+                            <div>
+                                <label for="member-username" class="block text-gray-700 text-sm font-semibold mb-1">Member Username</label>
+                                <input type="text" id="member-username" name="username" placeholder="new_member_username"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    required>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-300 ease-in-out shadow-md">
+                                Add Member
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Add Expense Section -->
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4">Add Expense</h3>
+                        <form id="add-expense-form" class="flex flex-col gap-3">
+                            <div>
+                                <label for="expense-description" class="block text-gray-700 text-sm font-semibold mb-1">Description</label>
+                                <input type="text" id="expense-description" name="description" placeholder="Dinner at restaurant"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="expense-amount" class="block text-gray-700 text-sm font-semibold mb-1">Amount</label>
+                                <input type="number" step="0.01" id="expense-amount" name="amount" placeholder="50.00"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    required>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition duration-300 ease-in-out shadow-md">
+                                Add Expense
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Group Details Sections -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Members</h3>
+                            <div id="group-members-list" class="flex flex-wrap gap-2">
+                                <p class="text-gray-500">Loading members...</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">My Dues</h3>
+                            <div id="my-dues-info">
+                                <p class="text-gray-500">Loading your dues...</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md col-span-full">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Group Expenses</h3>
+                            <div id="group-expenses-list" class="flex flex-col gap-2">
+                                <p class="text-gray-500">Loading expenses...</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Group Dues Summary</h3>
+                            <div id="group-dues-summary">
+                                <p class="text-gray-500">Loading group dues...</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Settlements</h3>
+                            <div id="group-settlements-list">
+                                <p class="text-gray-500">Loading settlements...</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('back-to-home-button').addEventListener('click', () => {
+                    currentPage = 'home';
+                    currentGroupId = null; // Clear selected group
+                    renderApp();
+                });
+                document.getElementById('add-member-form').addEventListener('submit', handleAddMember);
+                document.getElementById('add-expense-form').addEventListener('submit', handleAddExpense);
+
+                // Load all group-specific data
+                await fetchAndDisplayGroupMembers(currentGroupId);
+                await fetchAndDisplayMyDues(currentGroupId, loggedInUsername);
+                await fetchAndDisplayGroupExpenses(currentGroupId);
+                await fetchAndDisplayGroupDuesSummary(currentGroupId);
+                await fetchAndDisplaySettlements(currentGroupId);
+            }
+        }
+
+        // --- API Call Functions ---
+
+        /**
+         * Generic function to make API calls.
+         * @param {string} url - The API endpoint URL.
+         * @param {string} method - HTTP method (GET, POST, etc.).
+         * @param {object} [body=null] - Request body for POST/PUT.
+         * @returns {Promise<object|null>} - JSON response data or null on error.
+         */
+        async function callApi(url, method, body = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+
+                if (response.ok) {
+                    return await response.json();
+                } else {
+                    const errorData = await response.json();
+                    showMessage(errorData.message || `API Error: ${response.statusText}`, 'error');
+                    console.error(`API Error (${url}):`, errorData);
+                    return null;
+                }
+            } catch (error) {
+                showMessage('Network error. Please check your connection.', 'error');
+                console.error(`Network error (${url}):`, error);
+                return null;
+            }
+        }
+
+        // --- Event Handlers for Forms and Buttons ---
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                showMessage('Please enter both username and password.', 'error');
+                return;
+            }
+
+            showMessage('Logging in...', 'info');
+            const data = await callApi('/signin/', 'POST', { username, password });
+
+            if (data && data.success) {
+                loggedInUsername = data.username; // Store the logged-in username
+                showMessage('Login successful!', 'success');
+                currentPage = 'home';
+                renderApp();
+            } else {
+                showMessage(data?.message || 'Login failed. Please check your credentials.', 'error');
+            }
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            const username = document.getElementById('signup-username').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+            if (!username || !email || !password || !confirmPassword) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', 'error');
+                return;
+            }
+
+            showMessage('Signing up...', 'info');
+            const data = await callApi('/signup/', 'POST', { username, email, password });
+
+            if (data && data.success) {
+                showMessage('Sign up successful! Please log in.', 'success');
+                currentPage = 'login';
+                renderApp();
+            } else {
+                showMessage(data?.message || 'Sign up failed. Please try again.', 'error');
+            }
+        }
+
+        function handleLogout() {
+            loggedInUsername = null;
+            currentGroupId = null;
+            showMessage('Logged out successfully.', 'info');
+            currentPage = 'login';
+            renderApp();
+        }
+
+        async function handleCreateGroup(event) {
+            event.preventDefault();
+            const name = document.getElementById('group-name').value;
+            const description = document.getElementById('group-description').value;
+
+            if (!name) {
+                showMessage('Please enter a group name.', 'error');
+                return;
+            }
+
+            showMessage('Creating group...', 'info');
+            const data = await callApi('/groups/add-group', 'POST', { name, username: loggedInUsername, description });
+
+            if (data && data.success) {
+                showMessage('Group created successfully!', 'success');
+                document.getElementById('create-group-form').reset(); // Clear form
+                await fetchAndDisplayGroups(); // Refresh group list
+            } else {
+                showMessage(data?.message || 'Failed to create group.', 'error');
+            }
+        }
+
+        async function handleAddMember(event) {
+            event.preventDefault();
+            const memberUsername = document.getElementById('member-username').value;
+
+            if (!memberUsername) {
+                showMessage('Please enter a username for the new member.', 'error');
+                return;
+            }
+
+            showMessage(`Adding ${memberUsername} to group...`, 'info');
+            const data = await callApi('/groups/add-member', 'POST', { groupId: currentGroupId, username: memberUsername });
+
+            if (data && data.success) {
+                showMessage(`${memberUsername} added successfully!`, 'success');
+                document.getElementById('add-member-form').reset(); // Clear form
+                await fetchAndDisplayGroupMembers(currentGroupId); // Refresh members list
+            } else {
+                showMessage(data?.message || 'Failed to add member.', 'error');
+            }
+        }
+
+        async function handleAddExpense(event) {
+            event.preventDefault();
+            const description = document.getElementById('expense-description').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+
+            if (!description || isNaN(amount) || amount <= 0) {
+                showMessage('Please enter a valid description and amount.', 'error');
+                return;
+            }
+
+            showMessage('Adding expense...', 'info');
+            const data = await callApi('/add-expense', 'POST', {
+                groupId: currentGroupId,
+                username: loggedInUsername, // The user who paid
+                description,
+                amount
+            });
+
+            if (data && data.success) {
+                showMessage('Expense added successfully!', 'success');
+                document.getElementById('add-expense-form').reset(); // Clear form
+                // Refresh all related group data
+                await fetchAndDisplayGroupExpenses(currentGroupId);
+                await fetchAndDisplayMyDues(currentGroupId, loggedInUsername);
+                await fetchAndDisplayGroupDuesSummary(currentGroupId);
+                await fetchAndDisplaySettlements(currentGroupId);
+            } else {
+                showMessage(data?.message || 'Failed to add expense.', 'error');
+            }
+        }
+
+
+        // --- Data Fetching and Display Functions ---
+
+        async function fetchAndDisplayGroups() {
+            const groupsListDiv = document.getElementById('my-groups-list');
+            const noGroupsMessage = document.getElementById('no-groups-message');
+            if (noGroupsMessage) noGroupsMessage.textContent = 'Loading groups...';
+            groupsListDiv.innerHTML = ''; // Clear previous list
+
+            const data = await callApi(`/users/${loggedInUsername}/groups`, 'GET');
+
+            if (data && data.success && data.groups && data.groups.length > 0) {
+                if (noGroupsMessage) noGroupsMessage.style.display = 'none';
+                data.groups.forEach(group => {
+                    const groupItem = document.createElement('div');
+                    groupItem.className = 'list-item flex justify-between items-center';
+                    groupItem.innerHTML = `
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-800">${group.groupName}</h4>
+                            <p class="text-sm text-gray-500">${group.description || 'No description'}</p>
+                        </div>
+                        <span class="text-xs text-gray-400">ID: ${group.groupId}</span>
+                    `;
+                    groupItem.addEventListener('click', () => {
+                        currentGroupId = group.groupId;
+                        currentPage = 'group-details';
+                        renderApp();
+                    });
+                    groupsListDiv.appendChild(groupItem);
+                });
+            } else {
+                if (noGroupsMessage) {
+                    noGroupsMessage.textContent = 'No groups found. Create one above!';
+                    noGroupsMessage.style.display = 'block';
+                } else {
+                    groupsListDiv.innerHTML = '<p class="text-gray-500 text-center">No groups found. Create one above!</p>';
+                }
+            }
+        }
+
+        async function fetchGroupDetails(groupId) {
+            // Your API schema doesn't have a direct "get group by ID" endpoint that returns DefaultGroupDto
+            // We'll simulate this by fetching all groups for the user and finding the one
+            // In a real app, you might add a /groups/{groupId} endpoint.
+            const data = await callApi(`/users/${loggedInUsername}/groups`, 'GET');
+            if (data && data.success && data.groups) {
+                return data.groups.find(g => g.groupId === groupId);
+            }
+            return null;
+        }
+
+        async function fetchAndDisplayGroupMembers(groupId) {
+            const membersListDiv = document.getElementById('group-members-list');
+            membersListDiv.innerHTML = '<p class="text-gray-500">Loading members...</p>';
+
+            const data = await callApi(`/groups/${groupId}/users`, 'GET');
+            if (data && data.success && data.users && data.users.length > 0) {
+                membersListDiv.innerHTML = ''; // Clear loading message
+                data.users.forEach(user => {
+                    const memberSpan = document.createElement('span');
+                    memberSpan.className = 'bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full';
+                    memberSpan.textContent = user.username;
+                    membersListDiv.appendChild(memberSpan);
+                });
+            } else {
+                membersListDiv.innerHTML = '<p class="text-gray-500">No members found.</p>';
+            }
+        }
+
+        async function fetchAndDisplayMyDues(groupId, username) {
+            const myDuesInfoDiv = document.getElementById('my-dues-info');
+            myDuesInfoDiv.innerHTML = '<p class="text-gray-500">Loading your dues...</p>';
+
+            const data = await callApi(`/groups/${groupId}/users/${username}/dues`, 'GET');
+            if (data && data.success) {
+                const str0 = data.totalDues < 0 ? 'You owe: $' : 'You are owed: $';
+                const str = str0 + Math.abs(data.totalDues).toFixed(2);
+                myDuesInfoDiv.innerHTML = `
+                    <p class="text-gray-700">Total Expenses Paid: <span class="font-semibold text-green-700">$${data.totalExpenses.toFixed(2)}</span></p>
+                    <p class="text-gray-700">Total Dues: <span class="font-semibold ${data.totalDues < 0 ? 'text-red-700' : 'text-green-700'}">${str}</span></p>
+                `;
+            } else {
+                myDuesInfoDiv.innerHTML = '<p class="text-gray-500">Could not load your dues.</p>';
+            }
+        }
+
+        async function fetchAndDisplayGroupExpenses(groupId) {
+            const expensesListDiv = document.getElementById('group-expenses-list');
+            expensesListDiv.innerHTML = '<p class="text-gray-500">Loading expenses...</p>';
+
+            const data = await callApi(`/groups/${groupId}/expenses`, 'GET');
+            if (data && data.success && data.expenses && data.expenses.length > 0) {
+                expensesListDiv.innerHTML = ''; // Clear loading message
+                data.expenses.sort((a, b) => new Date(b.ts) - new Date(a.ts)); // Sort by newest first
+                data.expenses.forEach(expense => {
+                    const expenseItem = document.createElement('div');
+                    expenseItem.className = 'list-item flex justify-between items-center';
+                    expenseItem.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800">${expense.description}</p>
+                            <p class="text-sm text-gray-600">Paid by: <span class="font-semibold">${expense.paidBy}</span></p>
+                            <p class="text-xs text-gray-400">${new Date(expense.ts).toLocaleString()}</p>
+                        </div>
+                        <div class="text-lg font-bold text-red-600">$${Math.abs(expense.amount).toFixed(2)}</div>
+                    `;
+                    expensesListDiv.appendChild(expenseItem);
+                });
+            } else {
+                expensesListDiv.innerHTML = '<p class="text-gray-500">No expenses recorded yet.</p>';
+            }
+        }
+
+        async function fetchAndDisplayGroupDuesSummary(groupId) {
+            const groupDuesSummaryDiv = document.getElementById('group-dues-summary');
+            groupDuesSummaryDiv.innerHTML = '<p class="text-gray-500">Loading group dues...</p>';
+
+            const data = await callApi(`/groups/${groupId}/dues`, 'GET');
+            if (data && data.success && data.dues) {
+                const duesMap = data.dues; // This is an object like { "user1": 10.50, "user2": -5.25 }
+                let duesHtml = '';
+                if (Object.keys(duesMap).length > 0) {
+                    for (const username in duesMap) {
+                        const amount = duesMap[username];
+                        const colorClass = amount < 0 ? 'text-red-600' : 'text-green-600';
+                        const sign = amount < 0 ? 'owes' : 'is owed';
+                        duesHtml += `<p class="text-gray-700">${username} <span class="font-semibold ${colorClass}">${sign} $${Math.abs(amount).toFixed(2)}</span></p>`;
+                    }
+                } else {
+                    duesHtml = '<p class="text-gray-500">No outstanding dues in this group.</p>';
+                }
+                groupDuesSummaryDiv.innerHTML = duesHtml;
+            } else {
+                groupDuesSummaryDiv.innerHTML = '<p class="text-gray-500">Could not load group dues summary.</p>';
+            }
+        }
+
+        async function fetchAndDisplaySettlements(groupId) {
+            const settlementsListDiv = document.getElementById('group-settlements-list');
+            settlementsListDiv.innerHTML = '<p class="text-gray-500">Loading settlements...</p>';
+
+            const data = await callApi(`/groups/${groupId}/settlements`, 'GET');
+            if (data && data.success && data.settlements && data.settlements.length > 0) {
+                settlementsListDiv.innerHTML = ''; // Clear loading message
+                data.settlements.forEach(settlement => {
+                    const settlementItem = document.createElement('div');
+                    settlementItem.className = 'list-item text-gray-700';
+                    settlementItem.innerHTML = `
+                        <p><span class="font-semibold">${settlement.from}</span> pays <span class="font-semibold">${settlement.to}</span> <span class="font-bold text-green-700">$${settlement.amount.toFixed(2)}</span></p>
+                    `;
+                    settlementsListDiv.appendChild(settlementItem);
+                });
+            } else {
+                settlementsListDiv.innerHTML = '<p class="text-gray-500">No settlements needed for this group.</p>';
+            }
+        }
+
+
+        // --- Initial render when the page loads ---
+        // This ensures the login page is displayed as soon as the DOM is ready.
+        document.addEventListener('DOMContentLoaded', renderApp);
+    </script>
+</body>
+</html>
+

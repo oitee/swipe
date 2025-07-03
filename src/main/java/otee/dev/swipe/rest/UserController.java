@@ -2,6 +2,8 @@ package otee.dev.swipe.rest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,7 +13,7 @@ import otee.dev.swipe.dto.UserDto;
 import otee.dev.swipe.service.UserService;
 import otee.dev.swipe.util.ServiceResponse;
 
-@RestController
+@Controller
 public class UserController {
     private UserService userService;
 
@@ -62,6 +64,20 @@ public class UserController {
             status = HttpStatus.BAD_REQUEST;
         }
         return new ResponseEntity<>(res, status);
+    }
+    @GetMapping("/login/")
+    public String login(){
+        return "redirect:/index.html";
+    }
+
+    @GetMapping("/signup/")
+    public String signup(){
+        return "redirect:/index.html";
+    }
+
+    @GetMapping(value = "/index")
+    public String forwardToIndex() {
+        return "redirect:/index.html";
     }
 
 }
