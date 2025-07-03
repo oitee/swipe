@@ -47,3 +47,10 @@ CREATE TABLE expense_splits (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(expense_id, user_id)
 );
+
+CREATE INDEX idx_group_members_group_id ON group_members(group_id);
+CREATE INDEX idx_group_members_user_id ON group_members(user_id);
+CREATE INDEX idx_expenses_group_id ON expenses(group_id);
+CREATE INDEX idx_expenses_paid_by ON expenses(paid_by);
+CREATE INDEX idx_expense_splits_expense_id ON expense_splits(expense_id);
+CREATE INDEX idx_expense_splits_user_id ON expense_splits(user_id);

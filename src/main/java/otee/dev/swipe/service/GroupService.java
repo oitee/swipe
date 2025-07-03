@@ -71,6 +71,7 @@ public class GroupService {
         }
         List<GroupDtos.DefaultGroupDto> groups = groupMembersRepository
                 .findByUserIdWithGroupName(user.get().getId())
+                .stream()
                 .map(member -> new GroupDtos.DefaultGroupDto(member.getGroupName(), member.getGroupId(), member.getGroupDescription()))
                 .toList();
         return new GroupDtos.GroupMembersDto(groups);
@@ -83,6 +84,7 @@ public class GroupService {
         }
         List<UserDto> users = groupMembersRepository
                 .findByGroupIdWithUsername(groupId)
+                .stream()
                 .map(member -> new UserDto(member.getUsername()))
                 .toList();
         return new UserDto.UsersForGroupDto(users);
@@ -95,6 +97,7 @@ public class GroupService {
         }
         List<TransactionDtos.ExpenseWithUsernameDto> expenses = expenseRepository
                 .findAllByGroupIdWithUsername(groupId)
+                .stream()
                 .map(expense -> new TransactionDtos.ExpenseWithUsernameDto(expense.getDescription(), expense.getAmount(), expense.getUsername(), expense.getExpenseTs()))
                 .toList();
         return new TransactionDtos.GroupExpensesWithUsernameDto(expenses);

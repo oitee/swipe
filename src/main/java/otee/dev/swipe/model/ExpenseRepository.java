@@ -20,5 +20,5 @@ public interface ExpenseRepository extends CrudRepository<Expense, Long> {
             ON expenses.paid_by = users.id
             WHERE expenses.group_id = :groupId
             """)
-    Stream<ExpenseWithUsername> findAllByGroupIdWithUsername(Long groupId);
+    List<ExpenseWithUsername> findAllByGroupIdWithUsername(Long groupId);
 }

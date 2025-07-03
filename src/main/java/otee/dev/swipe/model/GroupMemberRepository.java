@@ -5,7 +5,6 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public interface GroupMemberRepository extends CrudRepository<GroupMember, Long> {
     Optional<GroupMember> findByUserIdAndGroupId(Long userId, Long groupId);
@@ -21,7 +20,7 @@ public interface GroupMemberRepository extends CrudRepository<GroupMember, Long>
             ON group_members.group_id = groups.id
             WHERE group_members.user_id = :userId
             """)
-    Stream<GroupMemberWithGroup> findByUserIdWithGroupName(Long userId);
+    List<GroupMemberWithGroup> findByUserIdWithGroupName(Long userId);
     @Query("""
             SELECT
             group_members.group_id,
@@ -32,5 +31,5 @@ public interface GroupMemberRepository extends CrudRepository<GroupMember, Long>
             ON group_members.user_id = users.id
             WHERE group_members.group_id = :groupId
             """)
-    Stream<GroupMemberWithUsername> findByGroupIdWithUsername(Long groupId);
+    List<GroupMemberWithUsername> findByGroupIdWithUsername(Long groupId);
 }
