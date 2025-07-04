@@ -1,6 +1,20 @@
 version: '3'
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/postgres
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_NAME=postgres
+      - DB_PORT=5432
   postgres:
     # Docker Hub image
     image: postgres:14
@@ -8,6 +22,8 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
       - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
     ports:
       - '5432:5432'
     volumes:
