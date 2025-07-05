@@ -10,11 +10,11 @@ services:
     depends_on:
       - postgres
     environment:
-      - DB_URL=jdbc:postgresql://postgres:5430/postgres
+      - DB_URL=jdbc:postgresql://postgres:5432/postgres
       - DB_HOST=postgres
       - DB_USER=postgres
       - DB_NAME=postgres
-      - DB_PORT=5430
+      - DB_PORT=5432
   postgres:
     # Docker Hub image
     image: postgres:14
