@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import com.google.gson.Gson;
 
+import otee.dev.swipe.api.SignInRequest;
 import otee.dev.swipe.api.SignUpRequest;
 import otee.dev.swipe.dto.UserDto;
 import otee.dev.swipe.service.UserService;
@@ -25,6 +26,8 @@ public class UserControllerTest {
     @Autowired
     UserService userService;
 
+    @Autowired Gson gson;
+
     @Test
     public void testSignupFlow() throws  Exception{
         mockMvc.perform(get("/signup/")).andDo(print()).andExpect(status().is3xxRedirection());
@@ -33,7 +36,6 @@ public class UserControllerTest {
         String password = "WonderLand123456!";
         String email = "alice" + salt + "@wonder.com";
 
-        Gson gson = new Gson();
         // Attempt sign up without username
         mockMvc.perform(post("/signup/")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -77,5 +79,61 @@ public class UserControllerTest {
         // Cleaning up the user from the db:
         userService.removeUser(username, password);
 
+    }
+
+    @Test
+    public void testSignInFlow() throws Exception{
+        mockMvc.perform(get("/login/")).andDo(print()).andExpect(status().is3xxRedirection());
+        long salt = Math.round(Math.random() * 1000);
+        String username = "AliceTest" + salt;
+        String password = "WonderLand123456!";
+        String email = "alice" + salt + "@wonder.com";
+        // Signup the user:
+        mockMvc.perform(post("/signup/")
+                        .content(gson.toJson(new SignUpRequest(username, password, email)))
+                        .contentType(MediaType.APPLICATION_JSON));
+
+        // Attempt sign in with empty password:
+        mockMvc.perform(post("/signin/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gson.toJson(new SignInRequest(username, null))))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(gson.toJson(new UserDto(false, "Password empty"))));
+
+        // Attempt sign in with incorrect password:
+        mockMvc.perform(post("/signin/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gson.toJson(new SignInRequest(username, "password"))))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(gson.toJson(new UserDto(false, "Incorrect Password"))));
+
+        // Attempt sign in with empty username:
+        mockMvc.perform(post("/signin/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gson.toJson(new SignInRequest(null, password))))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(gson.toJson(new UserDto(false, "Username empty"))));
+
+        // Attempt sign in with correct params
+        mockMvc.perform(post("/signin/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gson.toJson(new SignInRequest(username, password))))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().json(gson.toJson(new UserDto(true, "Welcome to Swipe!"))));
+
+        // Re-attempt sign in with the same params:
+        mockMvc.perform(post("/signin/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gson.toJson(new SignInRequest(username, password))))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().json(gson.toJson(new UserDto(true, "Welcome to Swipe!"))));
+
+        // Clean up the user from the db:
+        userService.removeUser(username, password);
     }
 }
