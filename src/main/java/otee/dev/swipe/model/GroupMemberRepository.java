@@ -32,4 +32,6 @@ public interface GroupMemberRepository extends CrudRepository<GroupMember, Long>
             WHERE group_members.group_id = :groupId
             """)
     List<GroupMemberWithUsername> findByGroupIdWithUsername(Long groupId);
+    int removeByGroupId(long groupId);
+    int removeByUserId(long userId);
 }

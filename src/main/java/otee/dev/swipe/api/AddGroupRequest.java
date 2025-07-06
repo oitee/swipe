@@ -5,6 +5,12 @@ public class AddGroupRequest {
     String username;
     String description;
 
+    public AddGroupRequest(String name, String username, String description){
+        this.name = name;
+        this.username = username;
+        this.description = description;
+    }
+
     public String getName() {
         return name;
     }

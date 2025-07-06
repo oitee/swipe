@@ -13,6 +13,7 @@ public class GroupDtos {
         private String addedBy;
         private String message;
         private Boolean success;
+        public DefaultGroupDto(){}
 
         public DefaultGroupDto(Boolean success, String message){
             this.message = message;

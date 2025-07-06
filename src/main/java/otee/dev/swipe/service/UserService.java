@@ -3,19 +3,23 @@ package otee.dev.swipe.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import otee.dev.swipe.dto.UserDto;
-import otee.dev.swipe.model.User;
-import otee.dev.swipe.model.UserRepository;
+import otee.dev.swipe.model.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class UserService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
+    private GroupService groupService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder){
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       GroupService groupService){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.groupService = groupService;
     }
 
     public UserDto signUp(String username, String email, String password){
@@ -49,6 +53,8 @@ public class UserService {
         if(!passwordEncoder.matches(password,user.getPassword())){
             return new UserDto(false, "Incorrect Password");
         }
+        // @TODO: Handle expenses and expense-splits
+        groupService.handleUserDeletion(user.getId());
         userRepository.removeById(user.getId());
         return new UserDto(user.getId(), user.getUsername(), "User removed");
     }

@@ -4,6 +4,7 @@ import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface GroupRepository extends CrudRepository<Group, Long> {
@@ -11,4 +12,6 @@ public interface GroupRepository extends CrudRepository<Group, Long> {
     Group updateUsers(@Param("users") String[] users, @Param("id") Long id);
 
     Optional<Group> findByName(String name);
+    int removeById(long id);
+    List<Group> findByCreatedBy(long createdBy);
 }

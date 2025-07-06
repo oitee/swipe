@@ -102,4 +102,28 @@ public class GroupService {
                 .toList();
         return new TransactionDtos.GroupExpensesWithUsernameDto(expenses);
     }
+
+    public GroupDtos.DefaultGroupDto removeGroup(long groupId){
+        Optional<Group> group = groupRepository.findById(groupId);
+        if(group.isEmpty()){
+            return new GroupDtos.DefaultGroupDto(false, "Group does not exist");
+        }
+        groupMembersRepository.removeByGroupId(groupId);
+        groupRepository.removeById(groupId);
+        return new GroupDtos.DefaultGroupDto(true, "Removed Group");
+    }
+
+    public GroupDtos.DefaultGroupDto handleUserDeletion(long userId){
+        // 1. Delete all group_members based on user's id, and
+        // 2. Delete only those groups, which were created by this user -> Ideally, we should simply swap the createdBy
+        // for such groups instead of deleting them. But since we don't allow removal of users from the end-user side,
+        // we are keeping this logic FOR NOW
+        groupMembersRepository.removeByUserId(userId);
+        List<Group> groups = groupRepository.findByCreatedBy(userId);
+        for(Group group : groups){
+            removeGroup(group.getId());
+        }
+        return new GroupDtos.DefaultGroupDto(true, "Removed Groups and members belonging to the user");
+
+    }
 }
