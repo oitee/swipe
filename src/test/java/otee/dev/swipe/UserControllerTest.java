@@ -9,7 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 import otee.dev.swipe.api.SignInRequest;
 import otee.dev.swipe.api.SignUpRequest;
@@ -31,7 +30,7 @@ public class UserControllerTest {
 
     @Test
     public void testSignupFlow() throws  Exception{
-        mockMvc.perform(get("/signup/")).andDo(print()).andExpect(status().is3xxRedirection());
+        mockMvc.perform(get("/signup/")).andExpect(status().is3xxRedirection());
         long salt = Math.round(Math.random() * 1000);
         String username = "AliceTest" + salt;
         String password = "WonderLand123456!";
@@ -41,7 +40,6 @@ public class UserControllerTest {
         mockMvc.perform(post("/signup/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignUpRequest(null, password, email))))
-                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Username empty"))));
 
@@ -49,15 +47,13 @@ public class UserControllerTest {
         mockMvc.perform(post("/signup/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignUpRequest(username, null, email))))
-                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Password empty"))));
 
-        // Attempt sign up with empty password:
+        // Attempt sign up with empty email:
         mockMvc.perform(post("/signup/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignUpRequest(username, email, null))))
-                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Email empty"))));
 
@@ -65,16 +61,13 @@ public class UserControllerTest {
         mockMvc.perform(post("/signup/")
                         .content(objectMapper.writeValueAsString(new SignUpRequest(username, password, email)))
                         .contentType("application/json"))
-                .andDo(print())
-                .andExpect(status().isCreated())
-                .andReturn();
+                .andExpect(status().isCreated());
 
         // Retry sign-up with the same params:
         mockMvc.perform(post("/signup/")
                         .content(objectMapper.writeValueAsString(new SignUpRequest(username, password, email)))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().is4xxClientError())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Username or email already exists!"))));
 
         // Cleaning up the user from the db:
@@ -84,7 +77,7 @@ public class UserControllerTest {
 
     @Test
     public void testSignInFlow() throws Exception{
-        mockMvc.perform(get("/login/")).andDo(print()).andExpect(status().is3xxRedirection());
+        mockMvc.perform(get("/login/")).andExpect(status().is3xxRedirection());
         long salt = Math.round(Math.random() * 1000);
         String username = "AliceTest" + salt;
         String password = "WonderLand123456!";
@@ -98,7 +91,6 @@ public class UserControllerTest {
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignInRequest(username, null))))
-                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Password empty"))));
 
@@ -106,7 +98,6 @@ public class UserControllerTest {
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignInRequest(username, "password"))))
-                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Incorrect Password"))));
 
@@ -114,7 +105,6 @@ public class UserControllerTest {
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignInRequest(null, password))))
-                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Username empty"))));
 
@@ -122,7 +112,6 @@ public class UserControllerTest {
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignInRequest(username, password))))
-                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(true, "Welcome to Swipe!"))));
 
@@ -130,7 +119,6 @@ public class UserControllerTest {
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SignInRequest(username, password))))
-                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(true, "Welcome to Swipe!"))));
 
