@@ -21,7 +21,7 @@ public class UserService {
     public UserDto signUp(String username, String email, String password){
         if(userRepository.existsByUsernameOrEmail(username, email))
         {
-            return new UserDto(false, "Username already exists!");
+            return new UserDto(false, "Username or email already exists!");
         }
         User user = new User(username, email, passwordEncoder.encode(password));
         User res = userRepository.save(user);
@@ -38,5 +38,18 @@ public class UserService {
             return new UserDto(false, "Incorrect Password");
         }
         return new UserDto(user.getId(), user.getUsername(), "Welcome to Swipe!");
+    }
+
+    public UserDto removeUser(String username, String password){
+        Optional<User> optionalUser = userRepository.findByUsername(username);
+        if (optionalUser.isEmpty()){
+            return new UserDto(false, "Username not found");
+        }
+        User user = optionalUser.get();
+        if(!passwordEncoder.matches(password,user.getPassword())){
+            return new UserDto(false, "Incorrect Password");
+        }
+        userRepository.removeById(user.getId());
+        return new UserDto(user.getId(), user.getUsername(), "User removed");
     }
 }

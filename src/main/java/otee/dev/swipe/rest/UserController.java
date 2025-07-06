@@ -24,7 +24,7 @@ public class UserController {
     @PostMapping("/signup/")
     public ResponseEntity<UserDto> signUp(@RequestBody SignUpRequest signUpRequest){
         if(ServiceResponse.isNullOrBlank(signUpRequest.getUsername())){
-            UserDto badResponse = new UserDto(false, "Password empty");
+            UserDto badResponse = new UserDto(false, "Username empty");
             return new ResponseEntity<>(badResponse, HttpStatus.BAD_REQUEST);
         }
         if(ServiceResponse.isNullOrBlank(signUpRequest.getEmail())){
