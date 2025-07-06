@@ -1,5 +1,6 @@
 package otee.dev.swipe;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -9,7 +10,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import com.google.gson.Gson;
 
 import otee.dev.swipe.api.SignInRequest;
 import otee.dev.swipe.api.SignUpRequest;
@@ -26,7 +26,8 @@ public class UserControllerTest {
     @Autowired
     UserService userService;
 
-    @Autowired Gson gson;
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Test
     public void testSignupFlow() throws  Exception{
@@ -39,30 +40,30 @@ public class UserControllerTest {
         // Attempt sign up without username
         mockMvc.perform(post("/signup/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignUpRequest(null, password, email))))
+                        .content(objectMapper.writeValueAsString(new SignUpRequest(null, password, email))))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(gson.toJson(new UserDto(false, "Username empty"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Username empty"))));
 
         // Attempt sign up with empty password:
         mockMvc.perform(post("/signup/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignUpRequest(username, null, email))))
+                        .content(objectMapper.writeValueAsString(new SignUpRequest(username, null, email))))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(gson.toJson(new UserDto(false, "Password empty"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Password empty"))));
 
         // Attempt sign up with empty password:
         mockMvc.perform(post("/signup/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignUpRequest(username, email, null))))
+                        .content(objectMapper.writeValueAsString(new SignUpRequest(username, email, null))))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(gson.toJson(new UserDto(false, "Email empty"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Email empty"))));
 
         // Attempt sign up with correct params:
         mockMvc.perform(post("/signup/")
-                        .content(gson.toJson(new SignUpRequest(username, password, email)))
+                        .content(objectMapper.writeValueAsString(new SignUpRequest(username, password, email)))
                         .contentType("application/json"))
                 .andDo(print())
                 .andExpect(status().isCreated())
@@ -70,11 +71,11 @@ public class UserControllerTest {
 
         // Retry sign-up with the same params:
         mockMvc.perform(post("/signup/")
-                        .content(gson.toJson(new SignUpRequest(username, password, email)))
+                        .content(objectMapper.writeValueAsString(new SignUpRequest(username, password, email)))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().is4xxClientError())
-                .andExpect(content().json(gson.toJson(new UserDto(false, "Username or email already exists!"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Username or email already exists!"))));
 
         // Cleaning up the user from the db:
         userService.removeUser(username, password);
@@ -90,48 +91,48 @@ public class UserControllerTest {
         String email = "alice" + salt + "@wonder.com";
         // Signup the user:
         mockMvc.perform(post("/signup/")
-                        .content(gson.toJson(new SignUpRequest(username, password, email)))
+                        .content(objectMapper.writeValueAsString(new SignUpRequest(username, password, email)))
                         .contentType(MediaType.APPLICATION_JSON));
 
         // Attempt sign in with empty password:
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignInRequest(username, null))))
+                        .content(objectMapper.writeValueAsString(new SignInRequest(username, null))))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(gson.toJson(new UserDto(false, "Password empty"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Password empty"))));
 
         // Attempt sign in with incorrect password:
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignInRequest(username, "password"))))
+                        .content(objectMapper.writeValueAsString(new SignInRequest(username, "password"))))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(gson.toJson(new UserDto(false, "Incorrect Password"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Incorrect Password"))));
 
         // Attempt sign in with empty username:
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignInRequest(null, password))))
+                        .content(objectMapper.writeValueAsString(new SignInRequest(null, password))))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(gson.toJson(new UserDto(false, "Username empty"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(false, "Username empty"))));
 
         // Attempt sign in with correct params
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignInRequest(username, password))))
+                        .content(objectMapper.writeValueAsString(new SignInRequest(username, password))))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().json(gson.toJson(new UserDto(true, "Welcome to Swipe!"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(true, "Welcome to Swipe!"))));
 
         // Re-attempt sign in with the same params:
         mockMvc.perform(post("/signin/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(new SignInRequest(username, password))))
+                        .content(objectMapper.writeValueAsString(new SignInRequest(username, password))))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().json(gson.toJson(new UserDto(true, "Welcome to Swipe!"))));
+                .andExpect(content().json(objectMapper.writeValueAsString(new UserDto(true, "Welcome to Swipe!"))));
 
         // Clean up the user from the db:
         userService.removeUser(username, password);
