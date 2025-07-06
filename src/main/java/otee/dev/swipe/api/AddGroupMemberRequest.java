@@ -1,8 +1,13 @@
 package otee.dev.swipe.api;
 
-public class AddGroupMember {
+public class AddGroupMemberRequest {
     Long groupId;
     String username;
+
+    public AddGroupMemberRequest(Long groupId, String username){
+        this.groupId = groupId;
+        this.username = username;
+    }
 
     public Long getGroupId() {
         return groupId;

@@ -3,7 +3,7 @@ package otee.dev.swipe.rest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import otee.dev.swipe.api.AddGroupMember;
+import otee.dev.swipe.api.AddGroupMemberRequest;
 import otee.dev.swipe.api.AddGroupRequest;
 import otee.dev.swipe.dto.GroupDtos;
 import otee.dev.swipe.dto.TransactionDtos;
@@ -40,16 +40,16 @@ public class GroupController {
     }
 
     @PostMapping("/groups/add-member")
-    public ResponseEntity<GroupDtos.AddGroupMemberDto> addGroupMember(@RequestBody AddGroupMember addGroupMember){
-        if(ServiceResponse.isNullOrBlank(addGroupMember.getGroupId())){
+    public ResponseEntity<GroupDtos.AddGroupMemberDto> addGroupMember(@RequestBody AddGroupMemberRequest addGroupMemberRequest){
+        if(ServiceResponse.isNullOrBlank(addGroupMemberRequest.getGroupId())){
             GroupDtos.AddGroupMemberDto badResponse = new GroupDtos.AddGroupMemberDto(false, "Group ID missing");
-            return new ResponseEntity<GroupDtos.AddGroupMemberDto>(badResponse, HttpStatus.BAD_GATEWAY);
+            return new ResponseEntity<GroupDtos.AddGroupMemberDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        if(ServiceResponse.isNullOrBlank(addGroupMember.getUsername())){
+        if(ServiceResponse.isNullOrBlank(addGroupMemberRequest.getUsername())){
             GroupDtos.AddGroupMemberDto badResponse = new GroupDtos.AddGroupMemberDto(false, "Username missing");
             return new ResponseEntity<GroupDtos.AddGroupMemberDto>(badResponse, HttpStatus.BAD_REQUEST);
         }
-        GroupDtos.AddGroupMemberDto response = groupService.addGroupMember(addGroupMember.getGroupId(), addGroupMember.getUsername());
+        GroupDtos.AddGroupMemberDto response = groupService.addGroupMember(addGroupMemberRequest.getGroupId(), addGroupMemberRequest.getUsername());
         HttpStatus status;
         if(response.getSuccess()){
             status = HttpStatus.OK;
